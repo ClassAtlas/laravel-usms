@@ -1,5 +1,5 @@
 {
-    "name": "ClassAtlas/laravel-usms",
+    "name": "class-atlas/laravel-usms",
     "description": "Laravel package for seamless SMS sending via Ubill API",
     "keywords": [
         "laravel",
