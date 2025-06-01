@@ -1,18 +1,24 @@
 {
-    "name": "classatlas/usms",
-    "description": "USms payment package",
+    "name": "ClassAtlas/laravel-usms",
+    "description": "Laravel package for seamless SMS sending via Ubill API",
     "keywords": [
-        "classatlas",
         "laravel",
+        "sms",
+        "ubill",
+        "notification",
         "usms"
     ],
-    "homepage": "https://github.com/classatlas/usms",
     "license": "MIT",
     "authors": [
         {
-            "name": "Class Atlas",
-            "email": "author@domain.com",
-            "role": "Developer"
+            "name": "Irakli Kirkitadze",
+            "email": "kirkita205@gmail.com",
+            "role": "Author"
+        },
+        {
+            "name": "Alexander Kupatadze",
+            "email": "h3xlay@gmail.com",
+            "role": "Contributor"
         }
     ],
     "require": {
