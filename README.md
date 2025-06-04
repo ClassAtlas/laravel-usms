@@ -2,7 +2,8 @@
 # 📦 Laravel Ubill SMS Integration
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/class-atlas/laravel-usms.svg?style=flat-square)](https://packagist.org/packages/class-atlas/laravel-usms)
-[![Total Downloads](https://img.shields.io/packagist/dt/class-atlass/laravel-usms.svg?style=flat-square)](https://packagist.org/packages/class-atlas/laravel-usms)
+[![Total Downloads](https://img.shields.io/packagist/dt/class-atlas/laravel-usms.svg?style=flat-square)](https://packagist.org/packages/class-atlas/laravel-usms)
+
 
 This Laravel package provides a simple and elegant integration with [Ubill](https://ubill.ge)'s SMS service, allowing your Laravel application to send text messages directly through Ubill's API.
 
