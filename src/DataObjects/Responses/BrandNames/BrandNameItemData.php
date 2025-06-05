@@ -1,6 +1,6 @@
 <?php
 
-namespace ClassAtlas\USms\DataObjects\BrandNames;
+namespace ClassAtlas\USms\DataObjects\Responses\BrandNames;
 
 use Carbon\CarbonImmutable;
 use ClassAtlas\USms\Enums\BrandNameAuthorized;

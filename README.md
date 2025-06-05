@@ -1,9 +1,7 @@
-
 # 📦 Laravel Ubill SMS Integration
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/class-atlas/laravel-usms.svg?style=flat-square)](https://packagist.org/packages/class-atlas/laravel-usms)
 [![Total Downloads](https://img.shields.io/packagist/dt/class-atlas/laravel-usms.svg?style=flat-square)](https://packagist.org/packages/class-atlas/laravel-usms)
-
 
 This Laravel package provides a simple and elegant integration with [Ubill](https://ubill.ge)'s SMS service, allowing your Laravel application to send text messages directly through Ubill's API.
 
@@ -14,6 +12,7 @@ Whether you're sending authentication codes, notifications, or alerts — this p
 ## 📌 Features
 
 - 📤 SMS Sending
+- 🛰️ Event Dispatching for Sent SMS
 - 📬 Delivery Reports
 - 💰 Get SMS Balance
 - 🏷️ Brand Name Listing
@@ -73,14 +72,14 @@ To send SMS through Laravel’s notification system:
 2. Define the `toUSms` method:
 
 ```php
-public function toUSms(object $notifiable): array
+public function toUSms(object $notifiable): MessageData
 {
-    return [
-        'brandID' => int,
-        'numbers' => [],
-        'text' => '',
-        'stopList' => false,
-    ];
+    return MessageData::from([
+        'brandId' => 123,
+        'numbers' => ['+9955XXXXXXX'],
+        'text' => 'Hello from Ubill!',
+        'stopList' => false
+    ]);
 }
 ```
 
@@ -92,6 +91,21 @@ public function via($notifiable)
     return [ClassAtlas\USms\Channels\USmsChannel::class];
 }
 ```
+
+---
+### 📡 USmsWasSent Event
+
+A event, `USmsWasSent`, is now dispatched whenever a notification is sent using the `HasUsmsChannel`.  
+This event receives a `USmsWasSentData` object containing:
+
+- `notificationId`: Optional identifier that can be defined in your notification class.
+- `sendSmsData`: The raw data returned by the Ubill SMS API.
+
+This allows you to track delivery statuses or coordinate actions across multiple notification channels.
+
+**Example:**  
+If you're using both the `database` and `USms` channels in your notification, defining a shared `notificationId`
+and pass to MessageData as a 5th parameter `notificationId`, it will allow you to correlate the records and update delivery statuses later based on the event.
 
 ---
 
@@ -132,5 +146,3 @@ You can register a new brand name using:
 ```php
 USms::createBrandName(brandName: string): BrandNameCreateData;
 ```
-
-
