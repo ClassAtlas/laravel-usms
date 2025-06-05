@@ -5,7 +5,10 @@ namespace ClassAtlas\USms\Enums;
 enum USmsStatus: int
 {
     case SMS_SENT = 0;
-    case DELIVERED = 1;
+    case RECEIVED = 1;
+    case NOT_DELIVERED = 2;
+    case AWAITING_STATUS = 3;
+    case ERROR = 4;
     case BRAND_ID_NOT_FOUND = 10;
     case NUMBERS_NOT_FOUND = 20;
     case EMPTY_MESSAGE_TEXT = 30;
@@ -18,7 +21,10 @@ enum USmsStatus: int
     {
         return match ($this) {
             self::SMS_SENT => 'SMS_SENT',
-            self::DELIVERED => 'DELIVERED',
+            self::RECEIVED => 'RECEIVED',
+            self::NOT_DELIVERED => 'NOT_DELIVERED',
+            self::AWAITING_STATUS => 'AWAITING_STATUS',
+            self::ERROR => 'ERROR',
             self::BRAND_ID_NOT_FOUND => 'BRAND_ID_NOT_FOUND',
             self::NUMBERS_NOT_FOUND => 'NUMBERS_NOT_FOUND',
             self::EMPTY_MESSAGE_TEXT => 'EMPTY_MESSAGE_TEXT',
