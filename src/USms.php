@@ -2,11 +2,11 @@
 
 namespace ClassAtlas\USms;
 
-use ClassAtlas\USms\DataObjects\BrandNameCreateData;
-use ClassAtlas\USms\DataObjects\BrandNames\BrandNameData;
-use ClassAtlas\USms\DataObjects\DeliveryReport\ReportData;
-use ClassAtlas\USms\DataObjects\SendSmsData;
-use ClassAtlas\USms\DataObjects\SmsBalanceData;
+use ClassAtlas\USms\DataObjects\Responses\BrandNameCreateData;
+use ClassAtlas\USms\DataObjects\Responses\BrandNames\BrandNameData;
+use ClassAtlas\USms\DataObjects\Responses\DeliveryReport\ReportData;
+use ClassAtlas\USms\DataObjects\Responses\SendSmsData;
+use ClassAtlas\USms\DataObjects\Responses\SmsBalanceData;
 use ClassAtlas\USms\Requests\CreateBrandNameRequest;
 use ClassAtlas\USms\Requests\DeliveryReportRequest;
 use ClassAtlas\USms\Requests\ListBrandNameRequest;

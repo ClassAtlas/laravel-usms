@@ -2,7 +2,7 @@
 
 namespace ClassAtlas\USms\Requests;
 
-use ClassAtlas\USms\DataObjects\BrandNameCreateData;
+use ClassAtlas\USms\DataObjects\Responses\BrandNameCreateData;
 use Saloon\Contracts\Body\HasBody;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;

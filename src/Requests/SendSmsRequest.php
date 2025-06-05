@@ -2,7 +2,7 @@
 
 namespace ClassAtlas\USms\Requests;
 
-use ClassAtlas\USms\DataObjects\SendSmsData;
+use ClassAtlas\USms\DataObjects\Responses\SendSmsData;
 use Saloon\Contracts\Body\HasBody;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;

@@ -1,6 +1,6 @@
 <?php
 
-namespace ClassAtlas\USms\DataObjects;
+namespace ClassAtlas\USms\DataObjects\Responses;
 
 use ClassAtlas\USms\Enums\USmsStatus;
 use Spatie\LaravelData\Data;

@@ -2,7 +2,7 @@
 
 namespace ClassAtlas\USms\Requests;
 
-use ClassAtlas\USms\DataObjects\DeliveryReport\ReportData;
+use ClassAtlas\USms\DataObjects\Responses\DeliveryReport\ReportData;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Http\Response;

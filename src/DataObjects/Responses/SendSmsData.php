@@ -1,15 +1,15 @@
 <?php
 
-namespace ClassAtlas\USms\DataObjects\DeliveryReport;
+namespace ClassAtlas\USms\DataObjects\Responses;
 
 use ClassAtlas\USms\Enums\USmsStatus;
 use Spatie\LaravelData\Data;
 
-class ReportData extends Data
+class SendSmsData extends Data
 {
     public function __construct(
         public USmsStatus $statusID,
-        /** @var ReportItemData[] */
-        public array $result,
+        public ?int $smsID,
+        public string $message,
     ) {}
 }
