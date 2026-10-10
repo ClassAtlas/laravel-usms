@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         failOnRisky="true"
+         failOnWarning="true">
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Requests">
+            <directory>tests/Requests</directory>
+        </testsuite>
+        <testsuite name="Channels">
+            <directory>tests/Channels</directory>
+        </testsuite>
+        <testsuite name="Http">
+            <directory>tests/Http</directory>
+        </testsuite>
+        <testsuite name="Recording">
+            <directory>tests/Recording</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_KEY" value="base64:2fl+Ktvkfl+Fuz4Qp/A75G2RTiWVA/ZoKZvp6fiiM10="/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="UBILL_API_URL" value="https://api.ubill.dev"/>
+        <env name="UBILL_SMS_API_KEY" value="test-api-key"/>
+        <env name="UBILL_SENDING_DISABLED" value="false"/>
+        <env name="UBILL_LOG_REQUESTS" value="false"/>
+    </php>
+</phpunit>

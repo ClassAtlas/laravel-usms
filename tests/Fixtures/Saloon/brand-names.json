@@ -1,0 +1,8 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application\/json"
+    },
+    "data": "{\"statusID\":0,\"brands\":[{\"id\":2,\"name\":\"Brand1\",\"authorized\":1,\"createdAt\":\"2025-01-23 20:30:21\"},{\"id\":5,\"name\":\"Brand2\",\"authorized\":1,\"createdAt\":\"2025-06-15 13:31:04\"},{\"id\":8,\"name\":\"Brand3\",\"authorized\":1,\"createdAt\":\"2025-06-25 14:07:56\"}]}",
+    "context": []
+}

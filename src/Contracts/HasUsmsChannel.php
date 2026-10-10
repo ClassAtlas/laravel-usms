@@ -8,9 +8,6 @@ interface HasUsmsChannel
 {
     /**
      * Get the SMS representation of the notification.
-     *
-     * @param object $notifiable
-     * @return MessageData
      */
     public function toUSms(object $notifiable): MessageData;
 }

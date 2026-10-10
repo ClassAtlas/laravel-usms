@@ -1,0 +1,8 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application\/json"
+    },
+    "data": "{\"statusID\":0,\"smsID\":5169305,\"message\":\"SMS Sent\"}",
+    "context": []
+}
