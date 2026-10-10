@@ -2,20 +2,22 @@
 
 namespace ClassAtlas\USms\DataObjects;
 
-use Illuminate\Support\Optional;
+use DateTimeInterface;
 use Spatie\LaravelData\Data;
 
 class MessageData extends Data
 {
-    public string|Optional $notificationId;
-
+    /**
+     * @param  string[]  $numbers
+     */
     public function __construct(
-        public int    $brandId,
-        public array  $numbers,
+        public int $brandId,
+        public array $numbers,
         public string $text,
-        public bool   $stopList,
-    )
-    {
-        $this->notificationId = uniqid();
-    }
+        public bool $stopList = false,
+        public bool $otp = false,
+        public ?DateTimeInterface $sendAt = null,
+        public ?string $callbackUrl = null,
+        public ?string $notificationId = null,
+    ) {}
 }

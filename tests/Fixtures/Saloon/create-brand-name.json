@@ -1,0 +1,8 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application\/json"
+    },
+    "data": "{\"statusID\":0,\"brandID\":123,\"message\":\"BrandName Created\"}",
+    "context": []
+}

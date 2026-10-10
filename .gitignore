@@ -1,1 +1,7 @@
+/vendor/
+composer.lock
+.env
 .idea
+.phpunit.cache/
+.phpunit.result.cache
+.phpstan.result.cache

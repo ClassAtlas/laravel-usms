@@ -2,7 +2,14 @@
 
 namespace ClassAtlas\USms\Requests;
 
+use ClassAtlas\USms\Contracts\ResponseCode;
+use ClassAtlas\USms\DataObjects\MessageData;
+use ClassAtlas\USms\DataObjects\Responses\ErrorData;
 use ClassAtlas\USms\DataObjects\Responses\SendSmsData;
+use ClassAtlas\USms\Enums\SendSmsCode;
+use ClassAtlas\USms\Traits\BuildsSendOptions;
+use ClassAtlas\USms\Traits\TransformsErrorResponse;
+use ClassAtlas\USms\USms;
 use Saloon\Contracts\Body\HasBody;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
@@ -11,18 +18,13 @@ use Saloon\Traits\Body\HasJsonBody;
 
 class SendSmsRequest extends Request implements HasBody
 {
-    use HasJsonBody;
+    use BuildsSendOptions, HasJsonBody, TransformsErrorResponse;
 
     protected Method $method = Method::POST;
 
-    /**
-     * @param  string[]  $numbers
-     */
     public function __construct(
-        protected int $brandId,
-        protected array $numbers,
-        protected string $text,
-        protected bool $stopList,
+        protected MessageData $message,
+        protected string $timezone = USms::PROVIDER_TIMEZONE,
     ) {}
 
     public function resolveEndpoint(): string
@@ -31,20 +33,31 @@ class SendSmsRequest extends Request implements HasBody
     }
 
     /**
-     * @return array{brandID: int, numbers: string[], text: string, stopList: bool}
+     * @return array<string, mixed>
      */
     public function defaultBody(): array
     {
         return [
-            'brandID' => $this->brandId,
-            'numbers' => $this->numbers,
-            'text' => $this->text,
-            'stopList' => $this->stopList,
+            'brandID' => $this->message->brandId,
+            'numbers' => $this->message->numbers,
+            'text' => $this->message->text,
+            'stopList' => $this->message->stopList,
+            ...$this->sendOptions(
+                $this->message->otp,
+                $this->message->sendAt,
+                $this->message->callbackUrl,
+                $this->timezone,
+            ),
         ];
     }
 
-    public function createDtoFromResponse(Response $response): SendSmsData
+    public function createDtoFromResponse(Response $response): SendSmsData|ErrorData
     {
-        return SendSmsData::from($response->json());
+        return $this->errorFromResponse($response) ?? SendSmsData::from($response->json());
+    }
+
+    protected function responseCode(int $statusId): ?ResponseCode
+    {
+        return SendSmsCode::tryFrom($statusId);
     }
 }
