@@ -58,6 +58,18 @@ class SendPersonalizedSmsRequest extends Request implements HasBody
         ];
     }
 
+    /**
+     * A large batch takes uBill longer to answer than a single message. The
+     * wait is set on the request, since the connector's config is read once
+     * and kept for as long as the connector lives.
+     *
+     * @return array<string, mixed>
+     */
+    protected function defaultConfig(): array
+    {
+        return $this->message->timeout === null ? [] : ['timeout' => $this->message->timeout];
+    }
+
     public function createDtoFromResponse(Response $response): SendSmsData|ErrorData
     {
         return $this->errorFromResponse($response) ?? SendSmsData::from($response->json());

@@ -174,6 +174,20 @@ it('skips the send when the notification has no brand', function (): void {
     Exceptions::assertReported(RuntimeException::class);
 });
 
+it('skips the send, and announces nothing, when the notification has nobody to go to', function (): void {
+    Exceptions::fake();
+    Event::fake([USmsWasSent::class, USmsSendFailed::class]);
+
+    [$channel, $mock] = channelAnswering(acceptedSend());
+
+    $channel->send(new AnonymousNotifiable, new TestSmsNotification(numbers: []));
+
+    $mock->assertNothingSent();
+    Event::assertNotDispatched(USmsWasSent::class);
+    Event::assertNotDispatched(USmsSendFailed::class);
+    Exceptions::assertNothingReported();
+});
+
 it('is resolved by the container with the bound USms', function (): void {
     expect(app(USmsChannel::class))->toBeInstanceOf(USmsChannel::class)
         ->and(app(USms::class))->toBe(app(USms::class));
