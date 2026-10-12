@@ -100,6 +100,21 @@ it('throws USmsRejectedException with the send code when uBill refuses', functio
     $this->fail('Expected a USmsRejectedException.');
 });
 
+it('carries its own timeout, however long the connector has been waiting by another', function (): void {
+    config()->set('usms.timeout', 30);
+
+    $mock = new MockClient([SendPersonalizedSmsRequest::class => MockResponse::make(['statusID' => 0, 'smsID' => 1, 'message' => 'SMS Sent'])]);
+    $this->connector->withMockClient($mock);
+
+    $this->sdk->sendPersonalized(personalizedMessage());
+    $this->sdk->sendPersonalized(personalizedMessage(timeout: 90));
+
+    $sent = $mock->getRecordedResponses();
+
+    expect($sent[0]->getPendingRequest()->config()->get('timeout'))->toBe(30)
+        ->and($sent[1]->getPendingRequest()->config()->get('timeout'))->toBe(90);
+});
+
 it('returns null and sends nothing while sending is disabled', function (): void {
     config()->set('usms.is_sending_disabled', true);
 

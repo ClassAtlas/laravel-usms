@@ -39,6 +39,12 @@ class USmsChannel
             return;
         }
 
+        // A message with nobody to go to is not sent: uBill would refuse it,
+        // and the refusal would read as something having gone wrong.
+        if ($message->numbers === []) {
+            return;
+        }
+
         try {
             $sendSmsData = $this->usms->send($message);
         } catch (USmsRejectedException $e) {

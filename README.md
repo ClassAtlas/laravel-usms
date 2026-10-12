@@ -60,6 +60,10 @@ Numbers are in international format without `00` or `+`.
 
 ### 2. Handle the callback
 
+Callbacks are optional. A callback that is not answered is retried for a second and a half and then never again, so an
+app that must know what became of every message reads `deliveryReport()` on a schedule instead, or as well. One report
+answers for every recipient of a personalized batch. ClassAtlas itself reads reports only and takes no callbacks.
+
 uBill reports delivery by calling one HTTPS URL, set in its API application settings, with a GET request. The package
 ships a `USmsCallbackRequest` FormRequest. Type-hint it in your controller action and Laravel's container will verify
 the callback key and parse the query string for you — the action only ever runs for a verified callback.
@@ -151,6 +155,13 @@ USms::sendPersonalized(new PersonalizedMessageData(
 
 It takes the same `stopList`, `otp`, `sendAt` and `callbackUrl` options.
 
+A large batch takes uBill longer to answer. Pass `timeout` (seconds) to give
+that one request longer than `UBILL_TIMEOUT`; uBill allows up to 100:
+
+```php
+USms::sendPersonalized(new PersonalizedMessageData(brandId: 29, recipients: $recipients, timeout: 90));
+```
+
 ### Laravel notifications
 
 Implement `HasUsmsChannel` on the notification and add the channel to `via()`:
@@ -186,10 +197,16 @@ The channel announces the outcome with an event:
 | uBill accepted the message                | Dispatches `USmsWasSent` (`notificationId`, `sendSmsData`, `notificationType`, `parts`) |
 | Sending is disabled                       | Dispatches `USmsWasSent` with `sendSmsData` null                             |
 | uBill refused it (bad number, no balance) | Dispatches `USmsSendFailed` (`statusID`, `code`, `message`) and does not throw |
+| The message has no numbers                | Sends nothing and dispatches nothing: uBill would only refuse it             |
 | Timeout, 5xx or rate limit                | Throws, so the queue retries the send                                        |
 
 Once uBill has accepted a message, an exception thrown by a `USmsWasSent` listener is reported and not rethrown. A
 failed job would be retried, and the retry would send — and bill — the same SMS again.
+
+A timeout is not proof that nothing was sent, and uBill cannot be asked whether a request it never answered was
+received. A retry after one can deliver the same SMS twice. Where that matters more than a message lost, send outside
+the channel and do not retry a request that got no clear answer; ClassAtlas does so for everything a school sends its
+guardians.
 
 ### Delivery reports
 
