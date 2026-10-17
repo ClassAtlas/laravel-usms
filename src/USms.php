@@ -130,10 +130,10 @@ class USms
      * @throws FatalRequestException
      * @throws RequestException
      */
-    public function createBrandName(string $brandName): BrandNameCreateData
+    public function createBrandName(string $brandName, string $description): BrandNameCreateData
     {
         /** @var BrandNameCreateData $dto */
-        $dto = $this->dispatch(new CreateBrandNameRequest($brandName));
+        $dto = $this->dispatch(new CreateBrandNameRequest($brandName, $description));
 
         return $dto;
     }

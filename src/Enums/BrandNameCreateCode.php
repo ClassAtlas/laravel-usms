@@ -11,6 +11,8 @@ enum BrandNameCreateCode: int implements ResponseCode
     case FORBIDDEN_CHARACTERS = 30;
     case ALREADY_EXISTS = 40;
     case PREVIOUS_PENDING = 50;
+    case DESCRIPTION_REQUIRED = 60;
+    case DESCRIPTION_TOO_LONG = 61;
     case JSON_ERROR = 90;
     case GENERAL_ERROR = 99;
 }
