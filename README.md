@@ -229,10 +229,15 @@ adds later is kept as its raw `statusID`, has no enum case, and counts as not fi
 
 ```php
 USms::listBrandName();           // BrandNameData — ->brands[] with id, name, authorized, createdAt
-USms::createBrandName('MyBrand'); // BrandNameCreateData — ->brandID
 USms::deleteBrandName(123);
 USms::balance();                 // SmsBalanceData — ->sms
+
+// BrandNameCreateData — ->brandID
+USms::createBrandName('MyBrand', 'https://mybrand.ge — payment reminders and notices to our customers');
 ```
+
+uBill requires the `description` and refuses one longer than 500 characters. It should name the brand's website,
+Facebook/Instagram page or application, and say how the brand name will be used.
 
 ### Error handling
 

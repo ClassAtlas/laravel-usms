@@ -15,12 +15,12 @@ beforeEach(function (): void {
     $this->sdk = new USms($this->connector);
 });
 
-it('resolves POST /v1/sms/brandNameCreate with the brand name', function (): void {
-    $request = new CreateBrandNameRequest('MyBrand');
+it('resolves POST /v1/sms/brandNameCreate with the brand name and its description', function (): void {
+    $request = new CreateBrandNameRequest('MyBrand', 'https://mybrand.ge');
 
     expect($request->getMethod())->toBe(Method::POST)
         ->and($request->resolveEndpoint())->toBe('/v1/sms/brandNameCreate')
-        ->and($request->body()->all())->toBe(['brandName' => 'MyBrand']);
+        ->and($request->body()->all())->toBe(['brandName' => 'MyBrand', 'description' => 'https://mybrand.ge']);
 });
 
 it('hydrates a BrandNameCreateData DTO from the fixture', function (): void {
@@ -28,7 +28,7 @@ it('hydrates a BrandNameCreateData DTO from the fixture', function (): void {
         CreateBrandNameRequest::class => scrubbedFixture('create-brand-name'),
     ]));
 
-    $created = $this->sdk->createBrandName('MyBrand');
+    $created = $this->sdk->createBrandName('MyBrand', 'https://mybrand.ge');
 
     expect($created)->toBeInstanceOf(BrandNameCreateData::class)
         ->and($created->brandID)->toBe(123);
@@ -40,7 +40,7 @@ it('reads a refusal with the brand-create meaning of the code, not the send one'
     ]));
 
     try {
-        $this->sdk->createBrandName('MyBrand');
+        $this->sdk->createBrandName('MyBrand', 'https://mybrand.ge');
     } catch (USmsRejectedException $e) {
         expect($e->responseCode())->toBe($code);
 
@@ -54,4 +54,6 @@ it('reads a refusal with the brand-create meaning of the code, not the send one'
     'forbidden characters' => [30, BrandNameCreateCode::FORBIDDEN_CHARACTERS],
     'already exists' => [40, BrandNameCreateCode::ALREADY_EXISTS],
     'previous still pending' => [50, BrandNameCreateCode::PREVIOUS_PENDING],
+    'description missing' => [60, BrandNameCreateCode::DESCRIPTION_REQUIRED],
+    'description too long' => [61, BrandNameCreateCode::DESCRIPTION_TOO_LONG],
 ]);

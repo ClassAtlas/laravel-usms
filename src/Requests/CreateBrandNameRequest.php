@@ -19,7 +19,10 @@ class CreateBrandNameRequest extends Request implements HasBody
 
     protected Method $method = Method::POST;
 
-    public function __construct(protected string $brandName) {}
+    public function __construct(
+        protected string $brandName,
+        protected string $description,
+    ) {}
 
     public function resolveEndpoint(): string
     {
@@ -27,12 +30,13 @@ class CreateBrandNameRequest extends Request implements HasBody
     }
 
     /**
-     * @return array{brandName: string}
+     * @return array{brandName: string, description: string}
      */
     public function defaultBody(): array
     {
         return [
             'brandName' => $this->brandName,
+            'description' => $this->description,
         ];
     }
 
