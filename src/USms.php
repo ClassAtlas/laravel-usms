@@ -24,6 +24,7 @@ use ClassAtlas\USms\Requests\ListBrandNameRequest;
 use ClassAtlas\USms\Requests\SendPersonalizedSmsRequest;
 use ClassAtlas\USms\Requests\SendSmsRequest;
 use ClassAtlas\USms\Requests\SmsBalanceRequest;
+use Psr\Http\Client\NetworkExceptionInterface;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\Http\Request;
@@ -65,6 +66,7 @@ class USms
      *
      * @throws USmsException
      * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
      * @throws RequestException
      */
     public function send(MessageData $message): ?SendSmsData
@@ -85,6 +87,7 @@ class USms
      *
      * @throws USmsException
      * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
      * @throws RequestException
      */
     public function sendPersonalized(PersonalizedMessageData $message): ?SendSmsData
@@ -102,6 +105,7 @@ class USms
     /**
      * @throws USmsException
      * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
      * @throws RequestException
      */
     public function deliveryReport(int $smsId): ReportData
@@ -115,6 +119,7 @@ class USms
     /**
      * @throws USmsException
      * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
      * @throws RequestException
      */
     public function balance(): SmsBalanceData
@@ -128,6 +133,7 @@ class USms
     /**
      * @throws USmsException
      * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
      * @throws RequestException
      */
     public function createBrandName(string $brandName, string $description): BrandNameCreateData
@@ -141,6 +147,7 @@ class USms
     /**
      * @throws USmsException
      * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
      * @throws RequestException
      */
     public function deleteBrandName(int $brandId): BrandNameDeleteData
@@ -154,6 +161,7 @@ class USms
     /**
      * @throws USmsException
      * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
      * @throws RequestException
      */
     public function listBrandName(): BrandNameData
@@ -185,6 +193,7 @@ class USms
      *
      * @throws USmsException
      * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
      * @throws RequestException
      */
     protected function dispatch(Request $request): object

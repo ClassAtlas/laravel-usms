@@ -268,7 +268,28 @@ try {
 | `USmsRateLimitedException` | HTTP 429 or `statusID` 429                                           |
 | `USmsException`            | Anything else uBill answered with: 401, 5xx, a non-JSON gateway page |
 
-Both specific exceptions extend `USmsException`. Network failures surface as Saloon's `FatalRequestException`.
+Both specific exceptions extend `USmsException`.
+
+A network failure before uBill's answer starts to arrive is not a `USmsException`, and it comes in two shapes. A
+connection that was never made (the host did not resolve or refused, the TLS handshake failed, or the connect timeout
+ran out) surfaces as Saloon's `FatalRequestException`. A failure after the connection was made, the request timeout
+among them, surfaces as PSR-18's `Psr\Http\Client\NetworkExceptionInterface` (Guzzle 8's `NetworkException`), which
+Saloon does not wrap. Catch both to handle every network failure:
+
+```php
+use Psr\Http\Client\NetworkExceptionInterface;
+use Saloon\Exceptions\Request\FatalRequestException;
+
+try {
+    USms::balance();
+} catch (FatalRequestException|NetworkExceptionInterface $e) {
+    // uBill could not be reached, or did not answer in time
+}
+```
+
+A connection that drops or times out after uBill's response headers arrived is a `USmsException` instead: Saloon
+reads it as a response, and the message names the HTTP status uBill had started to answer with. On Guzzle 7, Saloon
+wraps every failure that has no response, timeouts at any point included, as `FatalRequestException`.
 
 uBill reuses the same numbers with a different meaning on each endpoint (40 is "not enough SMS" on a send and
 "brand name already added" on a brand create), so every endpoint has its own code enum: `SendSmsCode`,

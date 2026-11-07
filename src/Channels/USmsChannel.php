@@ -12,6 +12,7 @@ use ClassAtlas\USms\Events\USmsWasSent;
 use ClassAtlas\USms\Exceptions\USmsException;
 use ClassAtlas\USms\Exceptions\USmsRejectedException;
 use ClassAtlas\USms\USms;
+use Psr\Http\Client\NetworkExceptionInterface;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 use Throwable;
@@ -27,6 +28,7 @@ class USmsChannel
      *
      * @throws USmsException
      * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
      * @throws RequestException
      */
     public function send(mixed $notifiable, HasUsmsChannel $notification): void
