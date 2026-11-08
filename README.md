@@ -5,6 +5,19 @@ and [Spatie Laravel Data](https://spatie.be/docs/laravel-data).
 
 ---
 
+## Supported versions
+
+| Laravel | PHP           |
+|---------|---------------|
+| 13      | 8.3, 8.4, 8.5 |
+| 12      | 8.3, 8.4, 8.5 |
+
+Every combination is tested in CI, with both the lowest and the latest allowed dependencies. A Laravel or PHP version
+is supported for as long as it receives security fixes; [SUPPORT.md](SUPPORT.md) says when versions are added and
+dropped. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+
+---
+
 ## Installation
 
 ```bash
@@ -345,7 +358,9 @@ composer install
 vendor/bin/pest --compact
 ```
 
-CI runs this suite on every push to `main` and on every pull request (`.github/workflows/tests.yml`).
+CI runs this suite for every supported PHP and Laravel version, with the lowest and the latest allowed dependencies,
+on every push to `main`, on every pull request and once a week (`.github/workflows/tests.yml`). Larastan and Pint run
+alongside it (`.github/workflows/static-analysis.yml`).
 
 | Tier         | Location          | Purpose                                                                                           |
 |--------------|-------------------|---------------------------------------------------------------------------------------------------|

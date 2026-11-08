@@ -4,20 +4,26 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    # No lock file is committed, so an update is a change to the constraint
-    # in composer.json. "increase" raises it to each new release, majors
-    # included, instead of waiting until a release falls outside the range.
-    versioning-strategy: "increase"
+    # A library's constraints are what its users have to install. "widen" adds a
+    # new release to a range and keeps its minimum; "increase" would raise every
+    # user's minimum with each upstream release.
+    versioning-strategy: "widen"
+    cooldown:
+      default-days: 5
     groups:
-      all-composer:
-        patterns:
-          - "*"
+      composer-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
     groups:
-      all-github-actions:
-        patterns:
-          - "*"
+      actions-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"

@@ -4,10 +4,28 @@ on:
   push:
     branches: [ main ]
   pull_request:
+  # Weekly as well: no lock file is committed, so a new release of a dependency
+  # only reaches CI when it runs.
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
 
 jobs:
   test:
+    name: PHP ${{ matrix.php }} · Laravel ${{ matrix.laravel }} · ${{ matrix.stability }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ '8.3', '8.4', '8.5' ]
+        laravel: [ '12', '13' ]
+        stability: [ prefer-lowest, prefer-stable ]
+        include:
+          - laravel: '12'
+            testbench: '10.*'
+          - laravel: '13'
+            testbench: '11.*'
 
     steps:
       - name: Checkout
@@ -16,12 +34,27 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.4
+          php-version: ${{ matrix.php }}
           tools: composer:v2
           coverage: none
 
-      - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}.*" "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update
+          composer update --${{ matrix.stability }} --prefer-dist --no-interaction
+
+      - name: Installed versions
+        run: composer show -D
 
       - name: Tests
-        run: ./vendor/bin/pest
+        run: vendor/bin/pest --ci
+
+  # The one check branch protection requires, so the matrix can change without
+  # touching the repository settings.
+  tests-passed:
+    name: Tests passed
+    if: always()
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.test.result }}" = "success"
