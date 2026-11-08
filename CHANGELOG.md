@@ -4,6 +4,14 @@ All notable changes to `class-atlas/laravel-usms` are listed here. The format fo
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 Releases before 3.1.0 are described in the [GitHub releases](https://github.com/ClassAtlas/laravel-usms/releases).
 
+## [Unreleased]
+
+### Changed
+
+- `SUPPORT.md` now covers this package only. It no longer speaks for every `class-atlas/*` package, and the rule for
+  new packages, which never applied here, is gone. Which versions are supported, and when they are added and dropped,
+  is unchanged.
+
 ## [3.1.0] - 2026-11-08
 
 ### Added
@@ -19,4 +27,5 @@ Releases before 3.1.0 are described in the [GitHub releases](https://github.com/
   supports Laravel 13.
 - Installing the package no longer downloads its tests, CI configuration and other development files.
 
+[Unreleased]: https://github.com/ClassAtlas/laravel-usms/compare/v3.1.0...HEAD
 [3.1.0]: https://github.com/ClassAtlas/laravel-usms/compare/v3.0.1...v3.1.0
