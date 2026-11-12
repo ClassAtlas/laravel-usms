@@ -4,14 +4,16 @@ name: Dependabot auto-merge
 on: pull_request_target
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   auto-merge:
     name: Auto-merge minor and patch updates
     runs-on: ubuntu-latest
     if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'ClassAtlas/laravel-usms'
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Dependabot metadata

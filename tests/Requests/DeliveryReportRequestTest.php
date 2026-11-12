@@ -90,6 +90,20 @@ it('builds an empty result when the response has none', function (array $body): 
     'empty result' => [['statusID' => 0, 'result' => []]],
 ]);
 
+it('throws UnexpectedValueException for a report entry it cannot read', function (mixed $entry): void {
+    $this->connector->withMockClient(new MockClient([
+        DeliveryReportRequest::class => MockResponse::make(['statusID' => 0, 'result' => [$entry]]),
+    ]));
+
+    expect(fn () => $this->sdk->deliveryReport(1))->toThrow(UnexpectedValueException::class);
+})->with([
+    'not an object' => ['555000000'],
+    'no number' => [['statusID' => 1]],
+    'no statusID' => [['number' => '555000000']],
+    'statusID null' => [['number' => '555000000', 'statusID' => null]],
+    'statusID not a number' => [['number' => '555000000', 'statusID' => 'delivered']],
+]);
+
 it('throws USmsRejectedException for an smsID uBill does not know', function (): void {
     $this->connector->withMockClient(new MockClient([
         DeliveryReportRequest::class => MockResponse::make([

@@ -382,6 +382,9 @@ try {
 
 Both specific exceptions extend `USmsException`.
 
+`deliveryReport()` throws `UnexpectedValueException` when uBill reports success but an entry of the report has no
+readable `number` or `statusID`.
+
 A network failure before uBill's answer starts to arrive is not a `USmsException`, and it comes in two shapes. A
 connection that was never made (the host did not resolve or refused, the TLS handshake failed, or the connect timeout
 ran out) surfaces as Saloon's `FatalRequestException`. A failure after the connection was made, the request timeout

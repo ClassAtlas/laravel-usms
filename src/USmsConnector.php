@@ -4,6 +4,7 @@ namespace ClassAtlas\USms;
 
 use ClassAtlas\USms\Support\Settings;
 use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 use Saloon\Http\Auth\HeaderAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Http\PendingRequest;
@@ -60,7 +61,13 @@ class USmsConnector extends Connector
             return;
         }
 
-        $logger = Log::channel(Settings::nullableString('usms.log_channel'));
+        $channel = Settings::nullableString('usms.log_channel');
+
+        $logger = $channel === null ? Log::getFacadeRoot() : Log::channel($channel);
+
+        if (! $logger instanceof LoggerInterface) {
+            return;
+        }
 
         $pendingRequest->middleware()->onRequest(function (PendingRequest $request) use ($logger): void {
             $logger->info('[USms] request', [
