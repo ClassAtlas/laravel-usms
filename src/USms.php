@@ -24,10 +24,12 @@ use ClassAtlas\USms\Requests\ListBrandNameRequest;
 use ClassAtlas\USms\Requests\SendPersonalizedSmsRequest;
 use ClassAtlas\USms\Requests\SendSmsRequest;
 use ClassAtlas\USms\Requests\SmsBalanceRequest;
+use ClassAtlas\USms\Support\Settings;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
 use Saloon\Http\Request;
+use UnexpectedValueException;
 
 class USms
 {
@@ -54,7 +56,7 @@ class USms
         $this->connector = $connector ?? new USmsConnector;
         $this->callbackHandler = $callbackHandler ?? new CallbackHandler(
             verifier: new CallbackKeyVerifier(
-                key: (string) config('usms.callback_key', ''),
+                key: Settings::string('usms.callback_key'),
             ),
             timezone: $this->timezone(),
         );
@@ -204,12 +206,16 @@ class USms
             throw USmsException::fromError($dto);
         }
 
+        if (! is_object($dto)) {
+            throw new UnexpectedValueException($request::class.' produced no response object.');
+        }
+
         return $dto;
     }
 
     protected function timezone(): string
     {
-        return (string) config('usms.timezone', self::PROVIDER_TIMEZONE);
+        return Settings::string('usms.timezone', self::PROVIDER_TIMEZONE);
     }
 
     /**
@@ -222,6 +228,7 @@ class USms
      */
     public function countSMSCharacters(?string $text): array
     {
+        $text ??= '';
         $len = mb_strlen($text, 'UTF-8');
 
         $isUnicode = $this->containsGeorgian($text);
@@ -254,7 +261,7 @@ class USms
 
     public function containsGeorgian(?string $text): bool
     {
-        return preg_match('/[\x{10A0}-\x{10FF}]/u', $text) === 1;
+        return preg_match('/[\x{10A0}-\x{10FF}]/u', $text ?? '') === 1;
     }
 
     public function characterLimit(?string $text): int

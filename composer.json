@@ -1,13 +1,16 @@
 {
     "name": "class-atlas/laravel-usms",
-    "description": "Laravel package for seamless SMS sending via Ubill API",
+    "description": "Laravel client for the uBill SMS API: sends, personalized batches, delivery reports, brand names and callbacks.",
     "keywords": [
         "laravel",
         "sms",
         "ubill",
+        "usms",
         "notification",
-        "usms"
+        "georgia",
+        "saloon"
     ],
+    "homepage": "https://github.com/ClassAtlas/laravel-usms",
     "license": "MIT",
     "authors": [
         {
@@ -21,9 +24,13 @@
             "role": "Contributor"
         }
     ],
+    "support": {
+        "issues": "https://github.com/ClassAtlas/laravel-usms/issues",
+        "source": "https://github.com/ClassAtlas/laravel-usms",
+        "security": "https://github.com/ClassAtlas/laravel-usms/security/policy"
+    },
     "require": {
         "php": "^8.3",
-        "ext-readline": "*",
         "illuminate/contracts": "^12.0||^13.0",
         "saloonphp/saloon": "^4.5",
         "spatie/laravel-data": "^4.20",
@@ -45,8 +52,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "ClassAtlas\\USms\\Tests\\": "tests/",
-            "Workbench\\App\\": "workbench/app/"
+            "ClassAtlas\\USms\\Tests\\": "tests/"
         }
     },
     "scripts": {

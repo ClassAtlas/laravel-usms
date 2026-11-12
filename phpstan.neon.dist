@@ -1,4 +1,7 @@
 parameters:
-    level: 6
+    level: 9
     paths:
         - src
+        - config
+    configDirectories:
+        - config
