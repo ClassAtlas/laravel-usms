@@ -109,6 +109,7 @@ class USms
      * @throws FatalRequestException
      * @throws NetworkExceptionInterface
      * @throws RequestException
+     * @throws UnexpectedValueException when an entry of the report has no readable number or statusID
      */
     public function deliveryReport(int $smsId): ReportData
     {

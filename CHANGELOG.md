@@ -23,6 +23,12 @@ Releases before 3.1.0 are described in the [GitHub releases](https://github.com/
 - A delivery report entry without a readable number or status throws `UnexpectedValueException`, instead of a PHP
   warning.
 
+### Fixed
+
+- A setting that cannot be used (null, an array, an empty string, a timeout that is not a number) falls back to the
+  package's default, for sends and callbacks alike. An empty `UBILL_TIMEZONE` no longer leaves callbacks without a date.
+- `countSMSCharacters()`, `containsGeorgian()` and `characterLimit()` accept `null` without a PHP deprecation notice.
+
 ### Removed
 
 - The `ext-readline` requirement. The package never used it, and it stopped installs on PHP built without readline.
