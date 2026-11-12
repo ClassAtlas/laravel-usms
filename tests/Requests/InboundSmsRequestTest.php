@@ -54,10 +54,10 @@ it('resolves GET /v1/sms/inbound with no query when nothing is filtered', functi
         ->and($request->query()->all())->toBe([]);
 });
 
-it('sends a date as a day in the provider\'s timezone', function (): void {
-    $request = new InboundSmsRequest(new InboundFilterData(date: new CarbonImmutable('2026-11-01 22:30', 'UTC')), 'Asia/Tbilisi');
+it('sends a date as the day it names, whatever the app\'s timezone', function (): void {
+    $request = new InboundSmsRequest(new InboundFilterData(date: new CarbonImmutable('2026-11-13 00:00', 'Asia/Tokyo')));
 
-    expect($request->query()->all())->toBe(['date' => '2026-11-02']);
+    expect($request->query()->all())->toBe(['date' => '2026-11-13']);
 });
 
 it('sends a window as timestamps with their offset, with the limit and cursor', function (): void {
@@ -208,4 +208,28 @@ it('stops reading when uBill hands back the same cursor', function (): void {
     expect($this->sdk->inboundAll()->all())->toHaveCount(1);
 
     $mock->assertSentCount(2);
+});
+
+it('stops reading when uBill hands back a cursor it gave before', function (): void {
+    $mock = new MockClient([
+        MockResponse::make(inboundPage([inboundMessage('a', 'One')], true, 'cursor-1')),
+        MockResponse::make(inboundPage([inboundMessage('b', 'Two')], true, 'cursor-2')),
+        MockResponse::make(inboundPage([], true, 'cursor-1')),
+    ]);
+    $this->connector->withMockClient($mock);
+
+    expect($this->sdk->inboundAll()->all())->toHaveCount(2);
+
+    $mock->assertSentCount(3);
+});
+
+it('reads a message whose noSms uBill left out as not under the policy', function (): void {
+    $message = inboundMessage('a', 'Old');
+    unset($message['noSms']);
+
+    $this->connector->withMockClient(new MockClient([
+        InboundSmsRequest::class => MockResponse::make(inboundPage([$message], false, null)),
+    ]));
+
+    expect($this->sdk->inbound()->result->first()->noSms)->toBeFalse();
 });

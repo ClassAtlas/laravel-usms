@@ -9,7 +9,6 @@ use ClassAtlas\USms\DataObjects\Responses\Inbound\InboundMessageData;
 use ClassAtlas\USms\DataObjects\Responses\Inbound\InboundMetaData;
 use ClassAtlas\USms\DataObjects\Responses\Inbound\InboundPageData;
 use ClassAtlas\USms\Traits\TransformsErrorResponse;
-use ClassAtlas\USms\USms;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
@@ -28,7 +27,6 @@ class InboundSmsRequest extends Request
 
     public function __construct(
         protected ?InboundFilterData $filter = null,
-        protected string $timezone = USms::PROVIDER_TIMEZONE,
     ) {}
 
     public function resolveEndpoint(): string
@@ -41,7 +39,7 @@ class InboundSmsRequest extends Request
      */
     protected function defaultQuery(): array
     {
-        return $this->filter?->toQuery($this->timezone) ?? [];
+        return $this->filter?->toQuery() ?? [];
     }
 
     /**

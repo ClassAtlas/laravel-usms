@@ -248,11 +248,11 @@ foreach ($page->result as $message) {
     $message->sendAt;    // ?CarbonImmutable, UTC
 }
 
-USms::inbound(new InboundFilterData(date: today()));                     // one whole day in usms.timezone
+USms::inbound(new InboundFilterData(date: today()));                     // the whole day this date names
 USms::inbound(new InboundFilterData(from: $from, to: $to, limit: 100)); // a window; `to` is exclusive
 
 foreach (USms::inboundAll(new InboundFilterData(date: today())) as $message) {
-    // every page of the day, read as you go (a LazyCollection)
+    // every page of the day, read as you go (a LazyCollection: each pass reads the pages again)
 }
 
 USms::inboundMessage('29a24670-e631-4bf3-b593-ea35df838115');           // one message by its eventID
@@ -293,7 +293,7 @@ Route::match(['get', 'post'], '/usms/callback', function (USmsCallbackRequest $r
     }
 
     if ($callback instanceof InboundReceivedData) {
-        // The same fields as an incoming message read from the API.
+        // An InboundMessageData: the same fields as a message read from the API.
         $callback->eventID;
         $callback->text;
     }
@@ -312,6 +312,9 @@ Route::match(['get', 'post'], '/usms/callback', function (USmsCallbackRequest $r
 | Known event with a malformed payload        | 422      |
 | Event this package does not model           | reaches the controller as `UnknownCallbackData` |
 
+- uBill's POST carries no CSRF token: define the route in `routes/api.php`, or leave it out of CSRF protection in
+  `bootstrap/app.php` with `$middleware->validateCsrfTokens(except: ['usms/callback'])`. Otherwise every incoming
+  message is answered 419, and a route that takes only GET answers it 405; uBill gives up after its fifth attempt.
 - A delivery callback that is not answered is retried for a second and a half and then never again, so an app that
   must know what became of every message reads `deliveryReport()` on a schedule instead, or as well. One report
   answers for every recipient of a personalized batch.

@@ -17,8 +17,8 @@ class InboundFilterData extends Data
 
     public function __construct(
         /**
-         * One whole calendar day in the provider's timezone. Not together
-         * with `from` or `to`.
+         * One whole calendar day, the one this date names, as uBill counts it
+         * in Tbilisi. Not together with `from` or `to`.
          */
         public ?DateTimeInterface $date = null,
         /**
@@ -52,15 +52,15 @@ class InboundFilterData extends Data
     }
 
     /**
-     * The query uBill reads: a date as a day in `$timezone`, a window as
-     * RFC 3339 timestamps with their offset.
+     * The query uBill reads: a date as the day it names, a window as RFC 3339
+     * timestamps with their offset.
      *
      * @return array<string, string|int>
      */
-    public function toQuery(string $timezone): array
+    public function toQuery(): array
     {
         return array_filter([
-            'date' => $this->date === null ? null : CarbonImmutable::instance($this->date)->setTimezone($timezone)->format('Y-m-d'),
+            'date' => $this->date?->format('Y-m-d'),
             'from' => $this->from === null ? null : CarbonImmutable::instance($this->from)->format('Y-m-d\TH:i:s.uP'),
             'to' => $this->to === null ? null : CarbonImmutable::instance($this->to)->format('Y-m-d\TH:i:s.uP'),
             'limit' => $this->limit,

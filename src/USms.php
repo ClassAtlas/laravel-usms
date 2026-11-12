@@ -33,6 +33,7 @@ use ClassAtlas\USms\Requests\SmsBalanceRequest;
 use ClassAtlas\USms\Support\Settings;
 use Generator;
 use Illuminate\Support\LazyCollection;
+use InvalidArgumentException;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
@@ -195,7 +196,7 @@ class USms
     public function inbound(?InboundFilterData $filter = null): InboundPageData
     {
         /** @var InboundPageData $dto */
-        $dto = $this->dispatch(new InboundSmsRequest($filter, $this->timezone()));
+        $dto = $this->dispatch(new InboundSmsRequest($filter));
 
         return $dto;
     }
@@ -204,6 +205,7 @@ class USms
      * One incoming message by its `eventID`. uBill answers HTTP 404, thrown as
      * a USmsException, for an id it does not know.
      *
+     * @throws InvalidArgumentException
      * @throws USmsException
      * @throws FatalRequestException
      * @throws NetworkExceptionInterface
@@ -220,7 +222,8 @@ class USms
     /**
      * Every incoming message the filter selects, page by page as they are
      * read. The first page's window is kept for the pages after it, as uBill
-     * asks, so messages arriving meanwhile do not shift it.
+     * asks, so messages arriving meanwhile do not shift it. Each pass over the
+     * collection reads the pages from uBill again.
      *
      * @return LazyCollection<int, InboundMessageData>
      */
@@ -233,8 +236,11 @@ class USms
                 yield $message;
             }
 
-            while ($page->meta->hasMore && $page->meta->nextCursor !== null) {
+            $cursorsRead = [];
+
+            while ($page->meta->hasMore && $page->meta->nextCursor !== null && ! isset($cursorsRead[$page->meta->nextCursor])) {
                 $cursor = $page->meta->nextCursor;
+                $cursorsRead[$cursor] = true;
 
                 $page = $this->inbound(new InboundFilterData(
                     from: $page->meta->from,
@@ -245,10 +251,6 @@ class USms
 
                 foreach ($page->result as $message) {
                     yield $message;
-                }
-
-                if ($page->meta->nextCursor === $cursor) {
-                    return;
                 }
             }
         });

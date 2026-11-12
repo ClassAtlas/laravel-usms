@@ -5,6 +5,7 @@ namespace ClassAtlas\USms\Requests;
 use ClassAtlas\USms\DataObjects\Responses\ErrorData;
 use ClassAtlas\USms\DataObjects\Responses\Inbound\InboundMessageData;
 use ClassAtlas\USms\Traits\TransformsErrorResponse;
+use InvalidArgumentException;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Http\Response;
@@ -20,9 +21,18 @@ class InboundMessageRequest extends Request
 
     protected Method $method = Method::GET;
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function __construct(
         protected string $eventId,
-    ) {}
+    ) {
+        // An empty id would ask for `/v1/sms/inbound/`, the list, and read
+        // its first message as the one asked for.
+        if (trim($eventId) === '') {
+            throw new InvalidArgumentException('An incoming message is read by its eventID, and none was given.');
+        }
+    }
 
     public function resolveEndpoint(): string
     {

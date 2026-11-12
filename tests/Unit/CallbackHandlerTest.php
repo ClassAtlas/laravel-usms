@@ -6,6 +6,7 @@ use ClassAtlas\USms\DataObjects\Callbacks\BrandActivatedData;
 use ClassAtlas\USms\DataObjects\Callbacks\DeliveryUpdatedData;
 use ClassAtlas\USms\DataObjects\Callbacks\InboundReceivedData;
 use ClassAtlas\USms\DataObjects\Callbacks\UnknownCallbackData;
+use ClassAtlas\USms\DataObjects\Responses\Inbound\InboundMessageData;
 use ClassAtlas\USms\Enums\BrandNameAuthorized;
 use ClassAtlas\USms\Enums\DeliveryStatus;
 use ClassAtlas\USms\Exceptions\InvalidCallbackKeyException;
@@ -146,6 +147,7 @@ it('parses an incoming message posted as JSON', function (): void {
     $callback = callbackHandler()->handleJson(inboundCallback(), 'secret');
 
     expect($callback)->toBeInstanceOf(InboundReceivedData::class)
+        ->and($callback)->toBeInstanceOf(InboundMessageData::class)
         ->and($callback->eventID)->toBe('29a24670-e631-4bf3-b593-ea35df838115')
         ->and($callback->from)->toBe('555000000')
         ->and($callback->to)->toBe('90566')

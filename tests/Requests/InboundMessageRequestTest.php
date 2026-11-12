@@ -22,6 +22,15 @@ it('resolves GET /v1/sms/inbound/{eventID}', function (): void {
         ->and((new InboundMessageRequest('a/b'))->resolveEndpoint())->toBe('/v1/sms/inbound/a%2Fb');
 });
 
+it('refuses an empty eventID before asking uBill, which would read it as the list', function (string $eventId): void {
+    $mock = new MockClient([InboundMessageRequest::class => scrubbedFixture('inbound-sms-message')]);
+    $this->connector->withMockClient($mock);
+
+    expect(fn () => $this->sdk->inboundMessage($eventId))->toThrow(InvalidArgumentException::class);
+
+    $mock->assertNothingSent();
+})->with(['empty' => [''], 'blank' => ['  ']]);
+
 it('hydrates the incoming message', function (): void {
     $this->connector->withMockClient(new MockClient([
         InboundMessageRequest::class => scrubbedFixture('inbound-sms-message'),
