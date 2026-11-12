@@ -3,6 +3,7 @@
 use Carbon\CarbonImmutable;
 use ClassAtlas\USms\DataObjects\PersonalizedMessageData;
 use ClassAtlas\USms\DataObjects\RecipientData;
+use ClassAtlas\USms\Enums\SendSmsCode;
 use ClassAtlas\USms\Exceptions\USmsRejectedException;
 use ClassAtlas\USms\Requests\DeliveryReportRequest;
 use ClassAtlas\USms\Requests\ListBrandNameRequest;
@@ -86,6 +87,28 @@ it('records a plain send and its delivery report', function (): void {
     announce('report: '.json_encode($report->result));
 
     expect($sent->smsID)->toBeGreaterThan(0);
+})->group('recording-sweep');
+
+it('records an otp send refused by uBill\'s protection for login codes', function (): void {
+    recordingScenario($this, 'send-sms-otp-limited');
+
+    // The first login code goes out and is billed; only the second, sent
+    // straight after it to the same number, is recorded.
+    $first = (new USms(new USmsConnector))->send(testMessage('ClassAtlas test: otp limit, first', otp: true));
+
+    announce("first otp send smsID: {$first->smsID} ({$first->message})");
+
+    try {
+        $second = liveSdk(SendSmsRequest::class, 'send-sms-otp-limited')->send(testMessage('ClassAtlas test: otp limit, second', otp: true));
+    } catch (USmsRejectedException $e) {
+        announce("second otp send refused: statusID {$e->statusId()} ({$e->getMessage()}), retry after {$e->retryAfter()}s");
+
+        expect($e->responseCode())->toBe(SendSmsCode::OTP_RECIPIENT_LIMITED);
+
+        return;
+    }
+
+    $this->fail("uBill took the second login code (smsID {$second->smsID}): its protection did not refuse it.");
 })->group('recording-sweep');
 
 it('records an otp send', function (): void {

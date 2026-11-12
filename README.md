@@ -112,6 +112,34 @@ USms::send(new MessageData(
 - `callbackUrl` only works once a default callback URL is configured in the uBill API application settings.
 - uBill may restrict an account that marks ordinary messages as `otp`.
 
+### Login codes and uBill's limit on them
+
+uBill protects login codes (`otp: true`) number by number: a number still in its cooldown, or over its limit, is
+refused. A refused number is neither sent nor charged, and the rest of the send goes on.
+
+When every number is refused, the send throws `USmsRejectedException` with `SendSmsCode::OTP_RECIPIENT_LIMITED` (47):
+`retryAfter()` says in how many seconds the first of them may be sent to again, and `rejectedNumbers()` names them.
+When only some are refused, the send returns as usual and names them:
+
+```php
+$sent = USms::send($message);
+
+if ($sent->isPartial()) {
+    $sent->acceptedCount;              // queued and charged
+    $sent->rejectedCount;
+
+    foreach ($sent->rejectedNumbers as $rejected) {
+        $rejected->index;              // the number's position in your request
+        $rejected->number;
+        $rejected->rejectionReason();  // OtpRejectionReason::OTP_COOLDOWN or OTP_NUMBER_LIMIT, null if new
+        $rejected->retryAfter;         // seconds
+    }
+}
+```
+
+Send again only the refused numbers, once their wait has passed: sending the whole batch again would send the
+accepted ones twice. The owner of the uBill API application can switch this protection off.
+
 ## A different text per number
 
 One request, one `smsID` for the whole batch:
@@ -171,8 +199,9 @@ The channel announces the outcome with an event:
 | Outcome                                   | What the channel does                                                        |
 |-------------------------------------------|------------------------------------------------------------------------------|
 | uBill accepted the message                | Dispatches `USmsWasSent` (`notificationId`, `sendSmsData`, `notificationType`, `parts`) |
+| uBill took it but refused some login codes | Dispatches `USmsWasSent`; `sendSmsData->rejectedNumbers` names the refused numbers |
 | Sending is disabled                       | Dispatches `USmsWasSent` with `sendSmsData` null                             |
-| uBill refused it (bad number, no balance) | Dispatches `USmsSendFailed` (`statusID`, `code`, `message`) and does not throw |
+| uBill refused it (bad number, no balance, every login code limited) | Dispatches `USmsSendFailed` (`statusID`, `code`, `message`, `retryAfter`) and does not throw |
 | The message has no numbers                | Sends nothing and dispatches nothing: uBill would only refuse it             |
 | Timeout, 5xx or rate limit                | Throws, so the queue retries the send                                        |
 
@@ -200,22 +229,56 @@ foreach ($report->result as $item) {
 `isFinal()` is true for `RECEIVED`, `NOT_DELIVERED` and `ERROR`; `isDelivered()` only for `RECEIVED`. A status uBill
 adds later is kept as its raw `statusID`, has no enum case, and counts as not final.
 
+## Incoming SMS
+
+Messages sent to the company's short number can be read once the uBill API application has the `sms.inbound`
+permission:
+
+```php
+use ClassAtlas\USms\DataObjects\InboundFilterData;
+
+$page = USms::inbound();                       // the last 24 hours, oldest first, 50 at a time
+
+foreach ($page->result as $message) {
+    $message->eventID;   // uBill's id for the message, the same in the callback
+    $message->from;      // the sender, local nine-digit format: 5XXXXXXXX
+    $message->to;        // the short number
+    $message->text;
+    $message->noSms;     // the short number's "no SMS" policy, set by uBill's administrator
+    $message->sendAt;    // ?CarbonImmutable, UTC
+}
+
+USms::inbound(new InboundFilterData(date: today()));                     // one whole day in usms.timezone
+USms::inbound(new InboundFilterData(from: $from, to: $to, limit: 100)); // a window; `to` is exclusive
+
+foreach (USms::inboundAll(new InboundFilterData(date: today())) as $message) {
+    // every page of the day, read as you go (a LazyCollection)
+}
+
+USms::inboundMessage('29a24670-e631-4bf3-b593-ea35df838115');           // one message by its eventID
+```
+
+- A page's `meta` holds its window (`from`, `to`, in UTC), `limit`, `count`, `hasMore` and `nextCursor`. To read the
+  next page yourself, pass `from`, `to` and `nextCursor` back, so the window stays fixed; `inboundAll()` does that.
+- A filter takes a `date` or a `from`/`to` window, not both, and 1 to 100 messages a page; anything else is refused
+  before the request.
+- uBill answers an invalid filter with HTTP 400, a missing permission with 401, an IP it does not allow with 403 and
+  an unknown cursor or `eventID` with 404. Each is thrown as a `USmsException` with that code.
+
 ## Callbacks
 
-Callbacks are optional. A callback that is not answered is retried for a second and a half and then never again, so an
-app that must know what became of every message reads `deliveryReport()` on a schedule instead, or as well. One report
-answers for every recipient of a personalized batch.
-
-uBill reports delivery by calling one HTTPS URL, set in its API application settings, with a GET request. The package
-ships a `USmsCallbackRequest` FormRequest. Type-hint it in your controller action and Laravel's container will verify
-the callback key and parse the query string for you — the action only ever runs for a verified callback.
+Callbacks are optional. uBill calls one HTTPS URL, set in its API application settings, for every event: a GET for a
+delivery update or a brand activation, a POST with a JSON body for an incoming message. The package ships a
+`USmsCallbackRequest` FormRequest that takes both. Type-hint it in your controller action and Laravel's container will
+verify the callback key and parse the callback for you — the action only ever runs for a verified callback.
 
 ```php
 use ClassAtlas\USms\DataObjects\Callbacks\BrandActivatedData;
 use ClassAtlas\USms\DataObjects\Callbacks\DeliveryUpdatedData;
+use ClassAtlas\USms\DataObjects\Callbacks\InboundReceivedData;
 use ClassAtlas\USms\Http\USmsCallbackRequest;
 
-Route::get('/usms/callback', function (USmsCallbackRequest $request) {
+Route::match(['get', 'post'], '/usms/callback', function (USmsCallbackRequest $request) {
     $callback = $request->callback();
 
     if ($callback instanceof DeliveryUpdatedData) {
@@ -229,6 +292,12 @@ Route::get('/usms/callback', function (USmsCallbackRequest $request) {
         $callback->brandID;
     }
 
+    if ($callback instanceof InboundReceivedData) {
+        // The same fields as an incoming message read from the API.
+        $callback->eventID;
+        $callback->text;
+    }
+
     // Anything else arrives as UnknownCallbackData. Acknowledge it too:
     // uBill sends every future event to this same URL.
 
@@ -238,10 +307,17 @@ Route::get('/usms/callback', function (USmsCallbackRequest $request) {
 
 | Situation                                   | Response |
 |---------------------------------------------|----------|
-| Wrong or missing `key`                      | 403      |
+| Wrong or missing `key` (GET), or `X-Webhook-Token` and body `key` (POST) | 403 |
 | `UBILL_CALLBACK_KEY` not configured         | 403      |
 | Known event with a malformed payload        | 422      |
 | Event this package does not model           | reaches the controller as `UnknownCallbackData` |
+
+- A delivery callback that is not answered is retried for a second and a half and then never again, so an app that
+  must know what became of every message reads `deliveryReport()` on a schedule instead, or as well. One report
+  answers for every recipient of a personalized batch.
+- An incoming message is delivered at least once: up to five attempts, after 1, 5 and 30 minutes and 2 hours, each
+  given 10 seconds. Answer with a 2xx once it is stored, store its `eventID` with a unique constraint, and answer a
+  repeat with success too.
 
 If you'd rather keep verification explicit, the facade form still works:
 
@@ -249,7 +325,9 @@ If you'd rather keep verification explicit, the facade form still works:
 use ClassAtlas\USms\Exceptions\InvalidCallbackKeyException;
 
 try {
-    $callback = USms::handleCallback($request->query());
+    $callback = $request->isMethod('POST')
+        ? USms::handleJsonCallback($request->json()->all(), $request->header('X-Webhook-Token'))
+        : USms::handleCallback($request->query());
 } catch (InvalidCallbackKeyException) {
     return response('', 403);
 }
@@ -284,6 +362,7 @@ try {
 } catch (USmsRejectedException $e) {
     $e->responseCode();   // e.g. SendSmsCode::INSUFFICIENT_BALANCE, or null if uBill added a new code
     $e->statusId();       // the raw statusID
+    $e->retryAfter();     // seconds, for login codes refused by uBill's limit
     $e->getMessage();     // uBill's own message
 } catch (USmsRateLimitedException $e) {
     $e->retryAfter();     // seconds, when uBill says
@@ -366,7 +445,8 @@ Observed with a test API application whose callback address pointed at a capture
   followed. An update missed for longer than that is gone, so keep a fallback (`deliveryReport()`) for messages that
   never reach a final status.
 
-Not yet observed: a callback for `NOT_DELIVERED` or `ERROR`, and the `sms.brand.activated` callback.
+Not yet observed: a callback for `NOT_DELIVERED` or `ERROR`, the `sms.brand.activated` callback, the limit on login
+codes (`statusID` 47) and incoming messages. The last two are modelled on uBill's documented examples of November 2026.
 The `date` is parsed leniently — a callback whose date cannot be read still yields its delivery status, with `date`
 null.
 
@@ -385,8 +465,6 @@ Everything this README shows is public. Classes marked `@internal` are not, and 
 
 | What                                                                  | Status      | Why                                                            |
 |-----------------------------------------------------------------------|-------------|----------------------------------------------------------------|
-| uBill's limit on login codes (`statusID` 47, partly refused sends)    | Planned     | uBill added it in November 2026; next minor release            |
-| Incoming SMS (`/v1/sms/inbound`, the `sms.inbound.received` callback) | Planned     | uBill added it in November 2026; next minor release            |
 | Sending with a GET request (`GET /v1/sms/send`)                       | Not planned | The POST send does the same, without the length limit of a URL |
 | Sending XML (`/v1/sms/sendXml`)                                       | Not planned | The JSON send does the same                                    |
 | uBill's Billing API (customers, accounts, payments)                   | Not planned | It belongs to uBill's billing product, not to SMS              |

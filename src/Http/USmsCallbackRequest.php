@@ -5,6 +5,7 @@ namespace ClassAtlas\USms\Http;
 use ClassAtlas\USms\CallbackHandler;
 use ClassAtlas\USms\DataObjects\Callbacks\BrandActivatedData;
 use ClassAtlas\USms\DataObjects\Callbacks\DeliveryUpdatedData;
+use ClassAtlas\USms\DataObjects\Callbacks\InboundReceivedData;
 use ClassAtlas\USms\DataObjects\Callbacks\UnknownCallbackData;
 use ClassAtlas\USms\Exceptions\InvalidCallbackKeyException;
 use ClassAtlas\USms\Exceptions\InvalidCallbackPayloadException;
@@ -12,7 +13,9 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Laravel FormRequest that verifies an incoming uBill callback key and parses
- * the query string into a typed DTO before the controller action runs.
+ * it into a typed DTO before the controller action runs: the query string of
+ * a GET callback, the JSON body of a POST one (`sms.inbound.received`). uBill
+ * sends both to the same URL, so the route accepts both methods.
  *
  *     public function __invoke(USmsCallbackRequest $request)
  *     {
@@ -27,7 +30,7 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class USmsCallbackRequest extends FormRequest
 {
-    protected DeliveryUpdatedData|BrandActivatedData|UnknownCallbackData $parsed;
+    protected DeliveryUpdatedData|BrandActivatedData|InboundReceivedData|UnknownCallbackData $parsed;
 
     public function authorize(): bool
     {
@@ -42,7 +45,7 @@ class USmsCallbackRequest extends FormRequest
         return [];
     }
 
-    public function callback(): DeliveryUpdatedData|BrandActivatedData|UnknownCallbackData
+    public function callback(): DeliveryUpdatedData|BrandActivatedData|InboundReceivedData|UnknownCallbackData
     {
         return $this->parsed;
     }
@@ -50,7 +53,11 @@ class USmsCallbackRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         try {
-            $this->parsed = $this->container->make(CallbackHandler::class)->handle($this->query());
+            $handler = $this->container->make(CallbackHandler::class);
+
+            $this->parsed = $this->isMethod('POST')
+                ? $handler->handleJson($this->json()->all(), $this->header('X-Webhook-Token'))
+                : $handler->handle($this->query());
         } catch (InvalidCallbackKeyException) {
             abort(403, 'Invalid uBill callback key');
         } catch (InvalidCallbackPayloadException $e) {

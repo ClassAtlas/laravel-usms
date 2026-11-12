@@ -3,6 +3,7 @@
 use Carbon\CarbonImmutable;
 use ClassAtlas\USms\DataObjects\MessageData;
 use ClassAtlas\USms\DataObjects\Responses\SendSmsData;
+use ClassAtlas\USms\Enums\OtpRejectionReason;
 use ClassAtlas\USms\Enums\SendSmsCode;
 use ClassAtlas\USms\Exceptions\USmsException;
 use ClassAtlas\USms\Exceptions\USmsRateLimitedException;
@@ -112,10 +113,94 @@ it('throws USmsRejectedException with the send code when uBill refuses', functio
     'no numbers' => [20, 'Numbers not found', SendSmsCode::NUMBERS_NOT_FOUND],
     'empty text' => [30, 'Empty message text', SendSmsCode::EMPTY_TEXT],
     'no balance' => [40, 'Not enough SMS', SendSmsCode::INSUFFICIENT_BALANCE],
+    'login code limited' => [47, 'OTP recipient protection limit exceeded', SendSmsCode::OTP_RECIPIENT_LIMITED],
     'no valid numbers' => [50, 'Valid numbers not found', SendSmsCode::NO_VALID_NUMBERS],
     'invalid send time' => [60, 'Invalid sendTime format. Use Y-m-d H:i', SendSmsCode::INVALID_SEND_TIME],
     'json error' => [90, 'Json Error', SendSmsCode::JSON_ERROR],
     'general error' => [99, 'General error', SendSmsCode::GENERAL_ERROR],
+]);
+
+it('reads an ordinary send as nothing refused', function (): void {
+    $this->connector->withMockClient(new MockClient([
+        SendSmsRequest::class => scrubbedFixture('send-sms'),
+    ]));
+
+    $response = $this->sdk->send(testMessage());
+
+    expect($response->isPartial())->toBeFalse()
+        ->and($response->acceptedCount)->toBeNull()
+        ->and($response->rejectedCount)->toBe(0)
+        ->and($response->rejectedNumbers)->toBe([]);
+});
+
+it('reads a login-code send uBill took while refusing a number', function (): void {
+    $this->connector->withMockClient(new MockClient([
+        SendSmsRequest::class => scrubbedFixture('send-sms-otp-partial'),
+    ]));
+
+    $response = $this->sdk->send(testMessage(otp: true));
+
+    expect($response->smsID)->toBe(123)
+        ->and($response->isPartial())->toBeTrue()
+        ->and($response->acceptedCount)->toBe(1)
+        ->and($response->rejectedCount)->toBe(1)
+        ->and($response->rejectedNumbers)->toHaveCount(1)
+        ->and($response->rejectedNumbers[0]->index)->toBe(0)
+        ->and($response->rejectedNumbers[0]->number)->toBe('555000000')
+        ->and($response->rejectedNumbers[0]->statusID)->toBe(47)
+        ->and($response->rejectedNumbers[0]->rejectionReason())->toBe(OtpRejectionReason::OTP_COOLDOWN)
+        ->and($response->rejectedNumbers[0]->retryAfter)->toBe(30);
+});
+
+it('throws the login-code limit with its wait and refused numbers when every number is refused', function (): void {
+    $this->connector->withMockClient(new MockClient([
+        SendSmsRequest::class => scrubbedFixture('send-sms-otp-limited'),
+    ]));
+
+    try {
+        $this->sdk->send(testMessage(otp: true));
+    } catch (USmsRejectedException $e) {
+        expect($e->responseCode())->toBe(SendSmsCode::OTP_RECIPIENT_LIMITED)
+            ->and($e->statusId())->toBe(47)
+            ->and($e->retryAfter())->toBe(30)
+            ->and($e->rejectedNumbers())->toHaveCount(1)
+            ->and($e->rejectedNumbers()[0]->rejectionReason())->toBe(OtpRejectionReason::OTP_COOLDOWN);
+
+        return;
+    }
+
+    $this->fail('Expected a USmsRejectedException.');
+});
+
+it('takes the shortest wait among the refused numbers when uBill sends no Retry-After', function (array $rejectedNumbers, ?int $wait): void {
+    $this->connector->withMockClient(new MockClient([
+        SendSmsRequest::class => MockResponse::make([
+            'statusID' => 47,
+            'smsID' => null,
+            'message' => 'OTP recipient protection limit exceeded',
+            'acceptedCount' => 0,
+            'rejectedCount' => count($rejectedNumbers),
+            'rejectedNumbers' => $rejectedNumbers,
+        ]),
+    ]));
+
+    try {
+        $this->sdk->send(testMessage(otp: true));
+    } catch (USmsRejectedException $e) {
+        expect($e->retryAfter())->toBe($wait);
+
+        return;
+    }
+
+    $this->fail('Expected a USmsRejectedException.');
+})->with([
+    'two waits' => [[
+        ['index' => 0, 'number' => '555000000', 'statusID' => 47, 'reason' => 'otpNumberLimit', 'retryAfter' => 45],
+        ['index' => 1, 'number' => '555000000', 'statusID' => 47, 'reason' => 'otpCooldown', 'retryAfter' => 20],
+    ], 20],
+    'no wait given' => [[
+        ['index' => 0, 'number' => '555000000', 'statusID' => 47, 'reason' => 'otpCooldown'],
+    ], null],
 ]);
 
 it('does not crash on a refusal code uBill has not documented', function (): void {

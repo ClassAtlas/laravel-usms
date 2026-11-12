@@ -16,5 +16,10 @@ class USmsSendFailedData extends Data
          * Null when uBill refused the send with a statusID its docs do not list.
          */
         public ?ResponseCode $code = null,
+        /**
+         * Seconds until the send may be tried again, when uBill says: a login
+         * code refused for its cooldown.
+         */
+        public ?int $retryAfter = null,
     ) {}
 }

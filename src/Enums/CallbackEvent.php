@@ -6,4 +6,5 @@ enum CallbackEvent: string
 {
     case DELIVERY_UPDATED = 'sms.delivery.updated';
     case BRAND_ACTIVATED = 'sms.brand.activated';
+    case INBOUND_RECEIVED = 'sms.inbound.received';
 }

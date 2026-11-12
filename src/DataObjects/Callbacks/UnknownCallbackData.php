@@ -11,7 +11,7 @@ use Spatie\LaravelData\Data;
 class UnknownCallbackData extends Data
 {
     /**
-     * @param  array<string, mixed>  $payload  The query string without the key.
+     * @param  array<string, mixed>  $payload  The query string or JSON body, without the key.
      */
     public function __construct(
         public ?string $event,

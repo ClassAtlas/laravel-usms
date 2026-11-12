@@ -1,0 +1,8 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application\/json"
+    },
+    "data": "{\"statusID\":0,\"smsID\":123,\"message\":\"SMS partially sent\",\"acceptedCount\":1,\"rejectedCount\":1,\"rejectedNumbers\":[{\"index\":0,\"number\":\"555000000\",\"statusID\":47,\"reason\":\"otpCooldown\",\"retryAfter\":30}]}",
+    "context": []
+}

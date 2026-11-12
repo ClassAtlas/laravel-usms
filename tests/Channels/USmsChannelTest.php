@@ -73,6 +73,54 @@ it('announces a refused send as failed and does not throw', function (): void {
     Event::assertNotDispatched(USmsWasSent::class);
 });
 
+it('announces login codes uBill refused for their limit as failed, with the wait', function (): void {
+    Event::fake([USmsWasSent::class, USmsSendFailed::class]);
+
+    [$channel] = channelAnswering(MockResponse::make([
+        'statusID' => 47,
+        'smsID' => null,
+        'message' => 'OTP recipient protection limit exceeded',
+        'acceptedCount' => 0,
+        'rejectedCount' => 1,
+        'rejectedNumbers' => [['index' => 0, 'number' => '555000000', 'statusID' => 47, 'reason' => 'otpCooldown', 'retryAfter' => 30]],
+    ], 200, ['Retry-After' => '30']));
+
+    $channel->send(new AnonymousNotifiable, new TestSmsNotification);
+
+    Event::assertDispatched(USmsSendFailed::class, function (USmsSendFailed $event): bool {
+        $data = $event->USmsSendFailedData;
+
+        return $data->code === SendSmsCode::OTP_RECIPIENT_LIMITED
+            && $data->statusID === 47
+            && $data->retryAfter === 30;
+    });
+    Event::assertNotDispatched(USmsWasSent::class);
+});
+
+it('announces a send uBill took while refusing a number as sent, naming the refused one', function (): void {
+    Event::fake([USmsWasSent::class, USmsSendFailed::class]);
+
+    [$channel] = channelAnswering(MockResponse::make([
+        'statusID' => 0,
+        'smsID' => 123,
+        'message' => 'SMS partially sent',
+        'acceptedCount' => 1,
+        'rejectedCount' => 1,
+        'rejectedNumbers' => [['index' => 1, 'number' => '555000000', 'statusID' => 47, 'reason' => 'otpCooldown', 'retryAfter' => 30]],
+    ]));
+
+    $channel->send(new AnonymousNotifiable, new TestSmsNotification(numbers: ['995555000001', '995555000000']));
+
+    Event::assertDispatched(USmsWasSent::class, function (USmsWasSent $event): bool {
+        $sent = $event->USmsWasSentData->sendSmsData;
+
+        return $sent->smsID === 123
+            && $sent->isPartial()
+            && $sent->rejectedNumbers[0]->index === 1;
+    });
+    Event::assertNotDispatched(USmsSendFailed::class);
+});
+
 it('throws a rate limit so the queue retries the send', function (): void {
     Event::fake([USmsWasSent::class, USmsSendFailed::class]);
 

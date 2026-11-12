@@ -23,8 +23,11 @@ class USmsChannel
 
     /**
      * A send uBill refuses is announced as {@see USmsSendFailed} and not
-     * thrown: asking again gets the same answer. Everything else — a timeout,
-     * a 5xx, a rate limit — is thrown so the queue retries it.
+     * thrown: asking again gets the same answer, or, for a login code in its
+     * cooldown, the same answer until the event's `retryAfter` has passed.
+     * Everything else — a timeout, a 5xx, a rate limit — is thrown so the
+     * queue retries it. A send uBill took while refusing some recipients is
+     * announced as {@see USmsWasSent}; its `sendSmsData` names them.
      *
      * @throws USmsException
      * @throws FatalRequestException
@@ -56,6 +59,7 @@ class USmsChannel
                 statusID: $e->statusId(),
                 message: $e->getMessage(),
                 code: $e->responseCode(),
+                retryAfter: $e->retryAfter(),
             ));
 
             return;

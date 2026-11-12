@@ -5,7 +5,7 @@ use ClassAtlas\USms\Tests\Support\RecordingMode;
 it('keeps every fixture free of real numbers, brand names and headers', function (string $path): void {
     $fixture = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
 
-    expect(array_keys($fixture['headers']))->toBe(['Content-Type']);
+    expect(array_keys($fixture['headers']))->toBeIn([['Content-Type'], ['Content-Type', 'Retry-After']]);
 
     preg_match_all('/(?<!\d)(?:995)?5\d{8}(?!\d)/', (string) $fixture['data'], $numbers);
 
