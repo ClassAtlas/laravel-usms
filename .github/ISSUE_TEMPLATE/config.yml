@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/ClassAtlas/laravel-usms/security/advisories/new
+    about: Privately, never in a public issue. See SECURITY.md.
+  - name: A question about your uBill account
+    url: https://ubill.ge/en/contact
+    about: Balance, brand name approval, delivery to an operator and account settings are uBill's to answer.

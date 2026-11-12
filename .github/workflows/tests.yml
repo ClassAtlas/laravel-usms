@@ -4,11 +4,13 @@ on:
   push:
     branches: [ main ]
   pull_request:
-  # Weekly as well: no lock file is committed, so a new release of a dependency
-  # only reaches CI when it runs.
+  # Weekly as well: no lock file is committed, so a new release of a dependency only reaches CI when it runs.
   schedule:
     - cron: '17 5 * * 1'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -29,10 +31,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           tools: composer:v2
@@ -41,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}.*" "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update
-          composer update --${{ matrix.stability }} --prefer-dist --no-interaction
+          composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress
 
       - name: Installed versions
         run: composer show -D
@@ -49,12 +53,44 @@ jobs:
       - name: Tests
         run: vendor/bin/pest --ci
 
-  # The one check branch protection requires, so the matrix can change without
-  # touching the repository settings.
+  # The next PHP, ahead of its release. It never blocks a merge: it only shows what to fix before PHP 8.6 is supported.
+  canary:
+    name: PHP 8.6 canary · Laravel 13 · prefer-stable
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.6'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:13.*" "orchestra/testbench:11.*" --dev --no-interaction --no-update
+          composer update --prefer-stable --prefer-dist --no-interaction --no-progress --ignore-platform-req=php+
+
+      - name: Installed versions
+        run: composer show -D
+
+      - name: Tests
+        run: vendor/bin/pest --ci
+
+  # The check the main ruleset requires, so the matrix can change without touching the repository settings. Its name is
+  # what the ruleset matches: rename it there as well, or every pull request waits for a check that never comes.
   tests-passed:
     name: Tests passed
     if: always()
     needs: test
     runs-on: ubuntu-latest
+
     steps:
-      - run: test "${{ needs.test.result }}" = "success"
+      - name: Every cell passed
+        run: test "${{ needs.test.result }}" = "success"

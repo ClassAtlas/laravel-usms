@@ -6,11 +6,22 @@ Releases before 3.1.0 are described in the [GitHub releases](https://github.com/
 
 ## [Unreleased]
 
+### Added
+
+- `SECURITY.md`: how to report a vulnerability privately.
+- `CONTRIBUTING.md`: running the checks, recording fixtures against the live API, and how releases are made.
+
 ### Changed
 
 - `SUPPORT.md` now covers this package only. It no longer speaks for every `class-atlas/*` package, and the rule for
   new packages, which never applied here, is gone. Which versions are supported, and when they are added and dropped,
   is unchanged.
+- The README opens with what the package does and its badges, and lists what it does not cover. Running the tests and
+  recording fixtures moved to `CONTRIBUTING.md`.
+
+### Removed
+
+- The `ext-readline` requirement. The package never used it, and it stopped installs on PHP built without readline.
 
 ## [3.1.0] - 2026-11-08
 
