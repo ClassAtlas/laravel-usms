@@ -22,6 +22,8 @@ Releases before 3.1.0 are described in the [GitHub releases](https://github.com/
 - `USmsChannel::send()` takes the notifiable as `object` instead of `mixed`. Laravel always passes an object.
 - A delivery report entry without a readable number or status throws `UnexpectedValueException`, instead of a PHP
   warning.
+- `composer.json` requires `laravel/framework` instead of `illuminate/contracts`: the package uses more of Laravel
+  than its contracts. Nothing changes for a Laravel app.
 
 ### Fixed
 
