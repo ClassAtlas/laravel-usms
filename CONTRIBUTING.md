@@ -30,8 +30,14 @@ Response fixtures live under `tests/Fixtures/Saloon/`. The suite calls `MockConf
 bootstrap — a missing fixture fails the test instead of silently hitting the network, so the default run is fully
 offline. Error responses stay inline via `MockResponse::make([...])`.
 
-All fixtures except `create-brand-name` and `delete-brand-name` are recordings of the live API. Those two are written
-by hand, because recording them would register or delete a real brand.
+Most fixtures are recordings of the live API. These are written by hand:
+
+- `create-brand-name` and `delete-brand-name`: recording them would register or delete a real brand.
+- `send-sms-otp-partial`: one login code per send cannot produce a partly refused send.
+- `send-sms-otp-limited`: copied from uBill's documented example until it is recorded (its scenario is in
+  `LiveSweepTest.php`; delete the fixture to record it, at the cost of one SMS).
+- `inbound-sms`, `inbound-sms-empty` and `inbound-sms-message`: they need the `sms.inbound` permission and a message
+  sent to a short number.
 
 ## Recording or refreshing a fixture
 
@@ -60,8 +66,8 @@ USMS_FIXTURE_RECORDING=1 vendor/bin/pest --filter='records a plain send'
 
 A sweep scenario whose fixture still exists is skipped. Fixtures are written through `ScrubbedFixture`: the recording
 number becomes a placeholder, brand names (they are customers' names) are replaced, and response headers are reduced
-to the content type. A guard test fails on any fixture with another phone number, a brand name that is not `BrandN`, or
-a header other than the content type. Read the fixture diff before you commit it.
+to the content type and `Retry-After`. A guard test fails on any fixture with another phone number, a brand name that is not `BrandN`, or
+a header other than the content type and `Retry-After`. Read the fixture diff before you commit it.
 
 ## Pull requests
 

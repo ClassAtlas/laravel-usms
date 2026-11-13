@@ -72,7 +72,7 @@ class SendPersonalizedSmsRequest extends Request implements HasBody
 
     public function createDtoFromResponse(Response $response): SendSmsData|ErrorData
     {
-        return $this->errorFromResponse($response) ?? SendSmsData::from($response->json());
+        return $this->errorFromResponse($response) ?? SendSmsData::fromAnswer($response->json());
     }
 
     protected function responseCode(int $statusId): ?ResponseCode

@@ -8,7 +8,8 @@ use Saloon\Http\Faking\Fixture;
 /**
  * A fixture that never writes real data to the repo: the recording number is
  * swapped for a placeholder, brand names (they are customers' names) are
- * replaced, and response headers are reduced to the content type.
+ * replaced, and response headers are reduced to the content type and uBill's
+ * `Retry-After`.
  */
 final class ScrubbedFixture extends Fixture
 {
@@ -16,7 +17,19 @@ final class ScrubbedFixture extends Fixture
 
     protected function beforeSave(RecordedResponse $recordedResponse): RecordedResponse
     {
+        $retryAfter = null;
+
+        foreach ($recordedResponse->headers as $name => $value) {
+            if (strcasecmp((string) $name, 'Retry-After') === 0) {
+                $retryAfter = is_array($value) ? reset($value) : $value;
+            }
+        }
+
         $recordedResponse->headers = ['Content-Type' => 'application/json'];
+
+        if (is_scalar($retryAfter)) {
+            $recordedResponse->headers['Retry-After'] = (string) $retryAfter;
+        }
 
         $body = (string) $recordedResponse->data;
         $payload = json_decode($body, true);

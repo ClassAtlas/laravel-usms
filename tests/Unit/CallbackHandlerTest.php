@@ -4,7 +4,9 @@ use ClassAtlas\USms\CallbackHandler;
 use ClassAtlas\USms\CallbackKeyVerifier;
 use ClassAtlas\USms\DataObjects\Callbacks\BrandActivatedData;
 use ClassAtlas\USms\DataObjects\Callbacks\DeliveryUpdatedData;
+use ClassAtlas\USms\DataObjects\Callbacks\InboundReceivedData;
 use ClassAtlas\USms\DataObjects\Callbacks\UnknownCallbackData;
+use ClassAtlas\USms\DataObjects\Responses\Inbound\InboundMessageData;
 use ClassAtlas\USms\Enums\BrandNameAuthorized;
 use ClassAtlas\USms\Enums\DeliveryStatus;
 use ClassAtlas\USms\Exceptions\InvalidCallbackKeyException;
@@ -122,3 +124,74 @@ it('refuses a known event with a malformed payload', function (array $overrides,
     'non-numeric statusID' => [['statusID' => 'delivered'], 'statusID'],
     'negative statusID' => [['statusID' => '-1'], 'statusID'],
 ]);
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function inboundCallback(array $overrides = []): array
+{
+    return array_merge([
+        'eventID' => '29a24670-e631-4bf3-b593-ea35df838115',
+        'from' => '555000000',
+        'to' => '90566',
+        'text' => 'Example incoming SMS',
+        'noSms' => false,
+        'sendAt' => '2026-11-02T08:30:00.396288Z',
+        'event' => 'sms.inbound.received',
+        'key' => 'secret',
+    ], $overrides);
+}
+
+it('parses an incoming message posted as JSON', function (): void {
+    $callback = callbackHandler()->handleJson(inboundCallback(), 'secret');
+
+    expect($callback)->toBeInstanceOf(InboundReceivedData::class)
+        ->and($callback)->toBeInstanceOf(InboundMessageData::class)
+        ->and($callback->eventID)->toBe('29a24670-e631-4bf3-b593-ea35df838115')
+        ->and($callback->from)->toBe('555000000')
+        ->and($callback->to)->toBe('90566')
+        ->and($callback->text)->toBe('Example incoming SMS')
+        ->and($callback->noSms)->toBeFalse()
+        ->and($callback->sendAt->format('Y-m-d\TH:i:s.uP'))->toBe('2026-11-02T08:30:00.396288+00:00');
+});
+
+it('reads the key from the body when the header is missing', function (): void {
+    expect(callbackHandler()->handleJson(inboundCallback()))->toBeInstanceOf(InboundReceivedData::class);
+});
+
+it('rejects a JSON callback whose header or body key is wrong', function (array $body, ?string $token): void {
+    callbackHandler()->handleJson($body, $token);
+})->with([
+    'wrong header, right body' => [inboundCallback(), 'not-the-key'],
+    'no header, wrong body' => [inboundCallback(['key' => 'not-the-key']), null],
+    'no key at all' => [array_diff_key(inboundCallback(), ['key' => true]), null],
+])->throws(InvalidCallbackKeyException::class);
+
+it('rejects an incoming message missing a field it needs', function (string $field, mixed $value): void {
+    callbackHandler()->handleJson(inboundCallback([$field => $value]), 'secret');
+})->with([
+    'eventID' => ['eventID', ''],
+    'from' => ['from', null],
+    'to' => ['to', ['90566']],
+    'text' => ['text', null],
+    'noSms' => ['noSms', 'perhaps'],
+])->throws(InvalidCallbackPayloadException::class);
+
+it('keeps an incoming message whose send time cannot be read', function (): void {
+    expect(callbackHandler()->handleJson(inboundCallback(['sendAt' => 'not a time']), 'secret')->sendAt)->toBeNull();
+});
+
+it('hands over a JSON event it does not model, without the key', function (): void {
+    $callback = callbackHandler()->handleJson(['event' => 'sms.something.new', 'key' => 'secret', 'id' => 7], 'secret');
+
+    expect($callback)->toBeInstanceOf(UnknownCallbackData::class)
+        ->and($callback->event)->toBe('sms.something.new')
+        ->and($callback->payload)->toBe(['event' => 'sms.something.new', 'id' => 7]);
+});
+
+it('does not read an incoming message from a query string', function (): void {
+    $callback = callbackHandler()->handle(['key' => 'secret', 'event' => 'sms.inbound.received', 'eventID' => 'a']);
+
+    expect($callback)->toBeInstanceOf(UnknownCallbackData::class);
+});

@@ -1,0 +1,9 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application\/json",
+        "Retry-After": "30"
+    },
+    "data": "{\"statusID\":47,\"smsID\":null,\"message\":\"OTP recipient protection limit exceeded\",\"acceptedCount\":0,\"rejectedCount\":1,\"rejectedNumbers\":[{\"index\":0,\"number\":\"555000000\",\"statusID\":47,\"reason\":\"otpCooldown\",\"retryAfter\":30}]}",
+    "context": []
+}

@@ -5,6 +5,7 @@ namespace ClassAtlas\USms;
 use Carbon\CarbonImmutable;
 use ClassAtlas\USms\DataObjects\Callbacks\BrandActivatedData;
 use ClassAtlas\USms\DataObjects\Callbacks\DeliveryUpdatedData;
+use ClassAtlas\USms\DataObjects\Callbacks\InboundReceivedData;
 use ClassAtlas\USms\DataObjects\Callbacks\UnknownCallbackData;
 use ClassAtlas\USms\Enums\BrandNameAuthorized;
 use ClassAtlas\USms\Enums\CallbackEvent;
@@ -50,11 +51,40 @@ class CallbackHandler
                     : null,
                 date: $this->date($query),
             ),
-            null => new UnknownCallbackData(
+            // uBill POSTs incoming messages as JSON: see handleJson().
+            CallbackEvent::INBOUND_RECEIVED, null => new UnknownCallbackData(
                 event: $event,
                 payload: array_diff_key($query, ['key' => true]),
             ),
         };
+    }
+
+    /**
+     * Verify, parse, and return a callback uBill POSTs as JSON: today only
+     * `sms.inbound.received`. The key comes in the `X-Webhook-Token` header,
+     * and in the body as well.
+     *
+     * @param  array<mixed>  $body  The decoded JSON body.
+     *
+     * @throws InvalidCallbackKeyException
+     * @throws InvalidCallbackPayloadException
+     */
+    public function handleJson(array $body, ?string $token = null): InboundReceivedData|UnknownCallbackData
+    {
+        $key = $token !== null && $token !== '' ? $token : ($body['key'] ?? '');
+
+        $this->verifier->verify(is_string($key) ? $key : '');
+
+        $event = is_string($body['event'] ?? null) ? $body['event'] : null;
+
+        if (CallbackEvent::tryFrom((string) $event) === CallbackEvent::INBOUND_RECEIVED) {
+            return InboundReceivedData::fromCallback($body, (string) $event);
+        }
+
+        /** @var array<string, mixed> $payload */
+        $payload = array_diff_key($body, ['key' => true]);
+
+        return new UnknownCallbackData(event: $event, payload: $payload);
     }
 
     /**

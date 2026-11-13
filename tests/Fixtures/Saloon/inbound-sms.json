@@ -1,0 +1,8 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application\/json"
+    },
+    "data": "{\"statusID\":0,\"meta\":{\"from\":\"2026-11-01T09:00:00.000000Z\",\"to\":\"2026-11-02T09:00:00.000000Z\",\"limit\":50,\"count\":1,\"hasMore\":false,\"nextCursor\":\"29a24670-e631-4bf3-b593-ea35df838115\"},\"result\":[{\"eventID\":\"29a24670-e631-4bf3-b593-ea35df838115\",\"from\":\"555000000\",\"to\":\"90566\",\"text\":\"Example incoming SMS\",\"noSms\":false,\"sendAt\":\"2026-11-02T08:30:00.396288Z\"}]}",
+    "context": []
+}

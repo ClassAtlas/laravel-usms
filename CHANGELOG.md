@@ -8,6 +8,16 @@ Releases before 3.1.0 are described in the [GitHub releases](https://github.com/
 
 ### Added
 
+- uBill's limit on login codes. A send marked `otp` that uBill refuses for every number throws
+  `USmsRejectedException` with `SendSmsCode::OTP_RECIPIENT_LIMITED` (47); its new `retryAfter()` and
+  `rejectedNumbers()` say when and which. A send it takes while refusing some numbers returns `SendSmsData` with
+  `acceptedCount`, `rejectedCount`, `rejectedNumbers` (`RejectedNumberData`, with `OtpRejectionReason`) and
+  `isPartial()`. The channel's `USmsSendFailedData` gains `retryAfter`.
+- Incoming SMS: `USms::inbound()`, `USms::inboundAll()` and `USms::inboundMessage()`, with `InboundFilterData`,
+  `InboundPageData`, `InboundMetaData` and `InboundMessageData`.
+- The `sms.inbound.received` callback, which uBill POSTs as JSON: `USmsCallbackRequest` takes it alongside the GET
+  callbacks and returns `InboundReceivedData`, an `InboundMessageData`; `USms::handleJsonCallback()` is its facade
+  form. To receive it, the callback route must accept POST as well as GET, outside CSRF protection.
 - `SECURITY.md`: how to report a vulnerability privately.
 - `CONTRIBUTING.md`: running the checks, recording fixtures against the live API, and how releases are made.
 

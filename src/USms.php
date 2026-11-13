@@ -4,7 +4,9 @@ namespace ClassAtlas\USms;
 
 use ClassAtlas\USms\DataObjects\Callbacks\BrandActivatedData;
 use ClassAtlas\USms\DataObjects\Callbacks\DeliveryUpdatedData;
+use ClassAtlas\USms\DataObjects\Callbacks\InboundReceivedData;
 use ClassAtlas\USms\DataObjects\Callbacks\UnknownCallbackData;
+use ClassAtlas\USms\DataObjects\InboundFilterData;
 use ClassAtlas\USms\DataObjects\MessageData;
 use ClassAtlas\USms\DataObjects\PersonalizedMessageData;
 use ClassAtlas\USms\DataObjects\Responses\BrandNameCreateData;
@@ -12,6 +14,8 @@ use ClassAtlas\USms\DataObjects\Responses\BrandNameDeleteData;
 use ClassAtlas\USms\DataObjects\Responses\BrandNames\BrandNameData;
 use ClassAtlas\USms\DataObjects\Responses\DeliveryReport\ReportData;
 use ClassAtlas\USms\DataObjects\Responses\ErrorData;
+use ClassAtlas\USms\DataObjects\Responses\Inbound\InboundMessageData;
+use ClassAtlas\USms\DataObjects\Responses\Inbound\InboundPageData;
 use ClassAtlas\USms\DataObjects\Responses\SendSmsData;
 use ClassAtlas\USms\DataObjects\Responses\SmsBalanceData;
 use ClassAtlas\USms\Exceptions\InvalidCallbackKeyException;
@@ -20,11 +24,16 @@ use ClassAtlas\USms\Exceptions\USmsException;
 use ClassAtlas\USms\Requests\CreateBrandNameRequest;
 use ClassAtlas\USms\Requests\DeleteBrandNameRequest;
 use ClassAtlas\USms\Requests\DeliveryReportRequest;
+use ClassAtlas\USms\Requests\InboundMessageRequest;
+use ClassAtlas\USms\Requests\InboundSmsRequest;
 use ClassAtlas\USms\Requests\ListBrandNameRequest;
 use ClassAtlas\USms\Requests\SendPersonalizedSmsRequest;
 use ClassAtlas\USms\Requests\SendSmsRequest;
 use ClassAtlas\USms\Requests\SmsBalanceRequest;
 use ClassAtlas\USms\Support\Settings;
+use Generator;
+use Illuminate\Support\LazyCollection;
+use InvalidArgumentException;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
@@ -176,6 +185,79 @@ class USms
     }
 
     /**
+     * One page of the messages sent to the company's short number. Without a
+     * filter: the last 24 hours, oldest first. Needs the `sms.inbound`
+     * permission on the uBill API application.
+     *
+     * @throws USmsException
+     * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
+     * @throws RequestException
+     */
+    public function inbound(?InboundFilterData $filter = null): InboundPageData
+    {
+        /** @var InboundPageData $dto */
+        $dto = $this->dispatch(new InboundSmsRequest($filter));
+
+        return $dto;
+    }
+
+    /**
+     * One incoming message by its `eventID`. uBill answers HTTP 404, thrown as
+     * a USmsException, for an id it does not know.
+     *
+     * @throws InvalidArgumentException
+     * @throws USmsException
+     * @throws FatalRequestException
+     * @throws NetworkExceptionInterface
+     * @throws RequestException
+     */
+    public function inboundMessage(string $eventId): InboundMessageData
+    {
+        /** @var InboundMessageData $dto */
+        $dto = $this->dispatch(new InboundMessageRequest($eventId));
+
+        return $dto;
+    }
+
+    /**
+     * Every incoming message the filter selects, page by page as they are
+     * read. The first page's window is kept for the pages after it, as uBill
+     * asks, so messages arriving meanwhile do not shift it. Each pass over the
+     * collection reads the pages from uBill again.
+     *
+     * @return LazyCollection<int, InboundMessageData>
+     */
+    public function inboundAll(?InboundFilterData $filter = null): LazyCollection
+    {
+        return LazyCollection::make(function () use ($filter): Generator {
+            $page = $this->inbound($filter);
+
+            foreach ($page->result as $message) {
+                yield $message;
+            }
+
+            $cursorsRead = [];
+
+            while ($page->meta->hasMore && $page->meta->nextCursor !== null && ! isset($cursorsRead[$page->meta->nextCursor])) {
+                $cursor = $page->meta->nextCursor;
+                $cursorsRead[$cursor] = true;
+
+                $page = $this->inbound(new InboundFilterData(
+                    from: $page->meta->from,
+                    to: $page->meta->to,
+                    limit: $filter?->limit,
+                    cursor: $cursor,
+                ));
+
+                foreach ($page->result as $message) {
+                    yield $message;
+                }
+            }
+        });
+    }
+
+    /**
      * Verify, parse, and return an incoming uBill callback.
      *
      * Pass the callback's query string parameters. Do whatever you want with
@@ -189,6 +271,21 @@ class USms
     public function handleCallback(array $query): DeliveryUpdatedData|BrandActivatedData|UnknownCallbackData
     {
         return $this->callbackHandler->handle($query);
+    }
+
+    /**
+     * Verify, parse, and return a callback uBill POSTs as JSON
+     * (`sms.inbound.received`). Pass the decoded body and the
+     * `X-Webhook-Token` header.
+     *
+     * @param  array<mixed>  $body
+     *
+     * @throws InvalidCallbackKeyException
+     * @throws InvalidCallbackPayloadException
+     */
+    public function handleJsonCallback(array $body, ?string $token = null): InboundReceivedData|UnknownCallbackData
+    {
+        return $this->callbackHandler->handleJson($body, $token);
     }
 
     /**

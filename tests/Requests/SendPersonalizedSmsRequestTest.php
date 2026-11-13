@@ -4,6 +4,7 @@ use Carbon\CarbonImmutable;
 use ClassAtlas\USms\DataObjects\PersonalizedMessageData;
 use ClassAtlas\USms\DataObjects\RecipientData;
 use ClassAtlas\USms\DataObjects\Responses\SendSmsData;
+use ClassAtlas\USms\Enums\OtpRejectionReason;
 use ClassAtlas\USms\Enums\SendSmsCode;
 use ClassAtlas\USms\Exceptions\USmsRejectedException;
 use ClassAtlas\USms\Requests\SendPersonalizedSmsRequest;
@@ -124,4 +125,24 @@ it('returns null and sends nothing while sending is disabled', function (): void
     expect($this->sdk->sendPersonalized(personalizedMessage()))->toBeNull();
 
     $mock->assertNothingSent();
+});
+
+it('reads a personalized login-code send uBill took while refusing a recipient', function (): void {
+    $this->connector->withMockClient(new MockClient([
+        SendPersonalizedSmsRequest::class => MockResponse::make([
+            'statusID' => 0,
+            'smsID' => 124,
+            'message' => 'SMS partially sent',
+            'acceptedCount' => 1,
+            'rejectedCount' => 1,
+            'rejectedNumbers' => [['index' => 1, 'number' => '555000000', 'statusID' => 47, 'reason' => 'otpNumberLimit', 'retryAfter' => 3600]],
+        ]),
+    ]));
+
+    $response = $this->sdk->sendPersonalized(personalizedMessage(otp: true));
+
+    expect($response->smsID)->toBe(124)
+        ->and($response->isPartial())->toBeTrue()
+        ->and($response->rejectedNumbers[0]->index)->toBe(1)
+        ->and($response->rejectedNumbers[0]->rejectionReason())->toBe(OtpRejectionReason::OTP_NUMBER_LIMIT);
 });
