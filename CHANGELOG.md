@@ -6,6 +6,8 @@ Releases before 3.1.0 are described in the [GitHub releases](https://github.com/
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-11-13
+
 ### Added
 
 - uBill's limit on login codes. A send marked `otp` that uBill refuses for every number throws
@@ -60,5 +62,6 @@ Releases before 3.1.0 are described in the [GitHub releases](https://github.com/
   supports Laravel 13.
 - Installing the package no longer downloads its tests, CI configuration and other development files.
 
-[Unreleased]: https://github.com/ClassAtlas/laravel-usms/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/ClassAtlas/laravel-usms/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/ClassAtlas/laravel-usms/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/ClassAtlas/laravel-usms/compare/v3.0.1...v3.1.0
