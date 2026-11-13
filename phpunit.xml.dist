@@ -22,6 +22,9 @@
         <testsuite name="Recording">
             <directory>tests/Recording</directory>
         </testsuite>
+        <testsuite name="Arch">
+            <file>tests/ArchTest.php</file>
+        </testsuite>
     </testsuites>
     <source>
         <include>

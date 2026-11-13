@@ -2,7 +2,9 @@
 
 namespace ClassAtlas\USms;
 
+use ClassAtlas\USms\Support\Settings;
 use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 use Saloon\Http\Auth\HeaderAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Http\PendingRequest;
@@ -17,12 +19,12 @@ class USmsConnector extends Connector
 
     public function resolveBaseUrl(): string
     {
-        return (string) config('usms.api_url');
+        return Settings::string('usms.api_url');
     }
 
     protected function defaultAuth(): HeaderAuthenticator
     {
-        return new HeaderAuthenticator((string) config('usms.api_key'), 'key');
+        return new HeaderAuthenticator(Settings::string('usms.api_key'), 'key');
     }
 
     /**
@@ -41,8 +43,8 @@ class USmsConnector extends Connector
     protected function defaultConfig(): array
     {
         return [
-            'connect_timeout' => (int) config('usms.connect_timeout', 10),
-            'timeout' => (int) config('usms.timeout', 30),
+            'connect_timeout' => Settings::integer('usms.connect_timeout', 10),
+            'timeout' => Settings::integer('usms.timeout', 30),
         ];
     }
 
@@ -59,8 +61,13 @@ class USmsConnector extends Connector
             return;
         }
 
-        $channel = config('usms.log_channel');
-        $logger = $channel ? Log::channel((string) $channel) : Log::getFacadeRoot();
+        $channel = Settings::nullableString('usms.log_channel');
+
+        $logger = $channel === null ? Log::getFacadeRoot() : Log::channel($channel);
+
+        if (! $logger instanceof LoggerInterface) {
+            return;
+        }
 
         $pendingRequest->middleware()->onRequest(function (PendingRequest $request) use ($logger): void {
             $logger->info('[USms] request', [

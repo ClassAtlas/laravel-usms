@@ -1,0 +1,50 @@
+name: Bug report
+description: Something in the package does not work as its README says.
+labels: [ bug ]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste an API key, a callback key, a real phone number or the text of a message sent to a real person.**
+        uBill has no sandbox: show the problem with Saloon's `MockClient` and the answer uBill gave, with numbers masked.
+        A security problem goes to [a private report](https://github.com/ClassAtlas/laravel-usms/security/advisories/new), not here.
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      placeholder: 3.1.0
+    validations:
+      required: true
+  - type: input
+    id: laravel-version
+    attributes:
+      label: Laravel version
+      placeholder: "13.40.0"
+    validations:
+      required: true
+  - type: input
+    id: php-version
+    attributes:
+      label: PHP version
+      placeholder: "8.5.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The call you made, what came back, and the exception and its message if there was one.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce it
+      description: The smallest code that shows it, ideally with Saloon's `MockClient` instead of the live API.
+      render: php

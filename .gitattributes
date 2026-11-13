@@ -1,6 +1,12 @@
+# Fixtures are compared byte for byte, so every checkout keeps LF line endings, Windows included.
+* text=auto eol=lf
+
 /.github            export-ignore
 /tests              export-ignore
+/.editorconfig      export-ignore
 /.gitattributes     export-ignore
 /.gitignore         export-ignore
+/CONTRIBUTING.md    export-ignore
 /phpstan.neon.dist  export-ignore
 /phpunit.xml.dist   export-ignore
+/pint.json          export-ignore

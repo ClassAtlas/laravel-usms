@@ -31,7 +31,7 @@ class USmsChannel
      * @throws NetworkExceptionInterface
      * @throws RequestException
      */
-    public function send(mixed $notifiable, HasUsmsChannel $notification): void
+    public function send(object $notifiable, HasUsmsChannel $notification): void
     {
         $message = $notification->toUSms($notifiable);
 
